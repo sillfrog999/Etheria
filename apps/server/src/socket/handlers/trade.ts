@@ -3,12 +3,11 @@ import type { GameStateManager } from '../../game/GameStateManager.js';
 import type { Env } from '../../config/env.js';
 import { getSupabaseAdmin } from '../../db/supabase.js';
 import type { TradeSession, TradeOffer } from '@etheria/shared';
-import { v4 as uuidv4 } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
-function uuid(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
+const TRADE_REQUEST_TIMEOUT_MS = 30000;
+const TRADE_SESSION_TIMEOUT_MS = 300000;
+const MAX_TRADE_RANGE = 5;
 const TRADE_REQUEST_TIMEOUT_MS = 30000;
 const TRADE_SESSION_TIMEOUT_MS = 300000; // 5 minutes
 const MAX_TRADE_RANGE = 5;
@@ -42,7 +41,7 @@ export function handleTrade(io: GameServer, socket: GameSocket, gameState: GameS
       return;
     }
 
-    const tradeId = uuid();
+    const tradeId = randomUUID();
 
     const trade: TradeSession = {
       id: tradeId,

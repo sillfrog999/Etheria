@@ -1,4 +1,6 @@
+
 import type { NetworkPlayer, Monster, InventorySlot, ItemInstance } from '@etheria/shared';
+import { MONSTER_DATABASE } from '@etheria/game-data';
 import type { Env } from '../config/env.js';
 import { getSupabaseAdmin } from '../db/supabase.js';
 
@@ -18,14 +20,14 @@ export interface ServerPlayer extends NetworkPlayer {
 }
 
 export class GameStateManager {
-  private players = new Map<string, ServerPlayer>(); // characterId -> player
-  private socketToCharacter = new Map<string, string>(); // socketId -> characterId
+  private players = new Map<string, ServerPlayer>();
+  private socketToCharacter = new Map<string, string>();
   private monsters = new Map<string, Monster>();
   private activeTrades = new Map<string, unknown>();
   private persistQueue = new Set<string>();
   private env?: Env;
 
-  private readonly TICK_MS = 50; // 20 ticks/second
+  private readonly TICK_MS = 50;
   private readonly PERSIST_INTERVAL_MS = 30000;
   private tickTimer: ReturnType<typeof setInterval>;
   private persistTimer: ReturnType<typeof setInterval>;
@@ -35,9 +37,9 @@ export class GameStateManager {
     this.persistTimer = setInterval(() => this.persistAll(), this.PERSIST_INTERVAL_MS);
   }
 
-  setEnv(env: Env) { this.env = env; }
-
-  // ===== Player management =====
+  setEnv(env: Env) {
+    this.env = env;
+  }
 
   addPlayer(player: ServerPlayer) {
     this.players.set(player.characterId, player);
@@ -47,12 +49,14 @@ export class GameStateManager {
 
   removePlayer(socketId: string): string | undefined {
     const charId = this.socketToCharacter.get(socketId);
+
     if (charId) {
       this.persistQueue.add(charId);
       this.players.delete(charId);
       this.socketToCharacter.delete(socketId);
       console.log(`[GameState] Player left: ${charId}`);
     }
+
     return charId;
   }
 
@@ -72,6 +76,7 @@ export class GameStateManager {
   getNearbyPlayers(characterId: string, radius = 20): ServerPlayer[] {
     const player = this.players.get(characterId);
     if (!player) return [];
+
     return Array.from(this.players.values()).filter(p =>
       p.characterId !== characterId &&
       p.region === player.region &&
@@ -86,24 +91,29 @@ export class GameStateManager {
 
   updatePlayerPosition(characterId: string, x: number, y: number, facing?: string) {
     const player = this.players.get(characterId);
+
     if (player) {
-      // Basic bounds validation
       if (Math.abs(x - player.x) > 10 || Math.abs(y - player.y) > 10) {
-        // Movement too large — could be teleport hack; ignore
         return false;
       }
+
       player.x = x;
       player.y = y;
+
       if (facing) player.facing = facing as typeof player.facing;
+
       player.lastMovement = Date.now();
       this.persistQueue.add(characterId);
+
       return true;
     }
+
     return false;
   }
 
   updatePlayerGold(characterId: string, gold: number) {
     const player = this.players.get(characterId);
+
     if (player) {
       player.gold = gold;
       this.persistQueue.add(characterId);
@@ -112,12 +122,11 @@ export class GameStateManager {
 
   updatePlayerHp(characterId: string, hp: number) {
     const player = this.players.get(characterId);
+
     if (player) {
       player.hp = Math.max(0, Math.min(hp, player.maxHp));
     }
   }
-
-  // ===== Trade management =====
 
   setActiveTrade(tradeId: string, trade: unknown) {
     this.activeTrades.set(tradeId, trade);
@@ -131,8 +140,6 @@ export class GameStateManager {
     this.activeTrades.delete(tradeId);
   }
 
-  // ===== Monster management =====
-
   addMonster(monster: Monster) {
     this.monsters.set(monster.id, monster);
   }
@@ -145,17 +152,20 @@ export class GameStateManager {
     return Array.from(this.monsters.values()).filter(m => m.region === region);
   }
 
-  // ===== Game tick =====
-
   private tick() {
-    // Monster AI tick (simplified)
     for (const monster of this.monsters.values()) {
       if (monster.state === 'dead') continue;
 
-      // Find nearest player in aggro range
+      const definition = MONSTER_DATABASE[monster.definitionId];
+
+      if (!definition) continue;
+
       const nearbyPlayer = Array.from(this.players.values()).find(p =>
         p.region === monster.region &&
-        Math.sqrt(Math.pow(p.x - monster.x, 2) + Math.pow(p.y - monster.y, 2)) <= monster.aggroRange
+        Math.sqrt(
+          Math.pow(p.x - monster.x, 2) +
+          Math.pow(p.y - monster.y, 2)
+        ) <= definition.aggroRange
       );
 
       if (nearbyPlayer && monster.state === 'idle') {
@@ -166,18 +176,23 @@ export class GameStateManager {
         monster.targetPlayerId = undefined;
       }
 
-      // Move toward player if chasing
       if (monster.state === 'chase' && monster.targetPlayerId) {
         const target = this.players.get(monster.targetPlayerId);
+
         if (target) {
-          const dist = Math.sqrt(Math.pow(target.x - monster.x, 2) + Math.pow(target.y - monster.y, 2));
-          if (dist <= monster.attackRange) {
+          const dist = Math.sqrt(
+            Math.pow(target.x - monster.x, 2) +
+            Math.pow(target.y - monster.y, 2)
+          );
+
+          if (dist <= definition.attackRange) {
             monster.state = 'attack';
-          } else {
+          } else if (dist > 0) {
             const dx = (target.x - monster.x) / dist;
             const dy = (target.y - monster.y) / dist;
-            monster.x += dx * monster.moveSpeed * (this.TICK_MS / 1000);
-            monster.y += dy * monster.moveSpeed * (this.TICK_MS / 1000);
+
+            monster.x += dx * definition.moveSpeed * (this.TICK_MS / 1000);
+            monster.y += dy * definition.moveSpeed * (this.TICK_MS / 1000);
           }
         } else {
           monster.state = 'idle';
@@ -185,28 +200,30 @@ export class GameStateManager {
         }
       }
 
-      // Return to spawn if too far
-      if (monster.state !== 'dead') {
-        const distFromSpawn = Math.sqrt(Math.pow(monster.x - monster.spawnX, 2) + Math.pow(monster.y - monster.spawnY, 2));
-        if (distFromSpawn > 20 && !monster.targetPlayerId) {
-          monster.x += (monster.spawnX - monster.x) * 0.05;
-          monster.y += (monster.spawnY - monster.y) * 0.05;
-        }
+      const distFromSpawn = Math.sqrt(
+        Math.pow(monster.x - monster.spawnX, 2) +
+        Math.pow(monster.y - monster.spawnY, 2)
+      );
+
+      if (distFromSpawn > 20 && !monster.targetPlayerId) {
+        monster.x += (monster.spawnX - monster.x) * 0.05;
+        monster.y += (monster.spawnY - monster.y) * 0.05;
       }
     }
   }
 
-  // ===== Persistence =====
-
   async persistAll(): Promise<void> {
     if (this.persistQueue.size === 0 || !this.env) return;
+
     const toSave = Array.from(this.persistQueue);
     this.persistQueue.clear();
 
     const supabase = getSupabaseAdmin(this.env);
+
     for (const charId of toSave) {
       const player = this.players.get(charId);
       if (!player) continue;
+
       try {
         await supabase.from('characters').update({
           pos_x: player.x,
@@ -218,6 +235,7 @@ export class GameStateManager {
         console.error(`[GameState] Failed to persist player ${charId}:`, err);
       }
     }
+
     if (toSave.length > 0) {
       console.log(`[GameState] Persisted ${toSave.length} players`);
     }

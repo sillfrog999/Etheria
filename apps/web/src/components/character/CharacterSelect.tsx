@@ -42,7 +42,7 @@ const CLASSES: Array<{
 ];
 
 export function CharacterSelect() {
-  const { setCharacter, token } = useGameStore();
+  const { setCharacter } = useGameStore();
 
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedChar, setSelectedChar] = useState<Character | null>(null);
@@ -55,28 +55,47 @@ export function CharacterSelect() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const getAccessToken = async () => {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      throw error;
+    }
+
+    const accessToken = data.session?.access_token;
+
+    if (!accessToken) {
+      throw new Error('Your session has expired. Please log in again.');
+    }
+
+    return accessToken;
+  };
+
   const fetchCharacters = async () => {
     try {
       setLoading(true);
 
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const accessToken = await getAccessToken();
 
       const res = await fetch(`${apiUrl}/api/characters`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${accessToken}`
         }
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
 
-        setCharacters(data.characters || []);
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load characters');
+      }
 
-        if (data.characters?.length > 0) {
-          setSelectedChar(data.characters[0]);
-        } else {
-          setIsCreating(true);
-        }
+      setCharacters(data.characters || []);
+
+      if (data.characters?.length > 0) {
+        setSelectedChar(data.characters[0]);
+      } else {
+        setIsCreating(true);
       }
     } catch (err) {
       console.error(err);
@@ -87,7 +106,7 @@ export function CharacterSelect() {
 
   useEffect(() => {
     fetchCharacters();
-  }, [token]);
+  }, []);
 
   const handleCreateCharacter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,12 +116,13 @@ export function CharacterSelect() {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const accessToken = await getAccessToken();
 
       const res = await fetch(`${apiUrl}/api/characters`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           name: name.trim(),

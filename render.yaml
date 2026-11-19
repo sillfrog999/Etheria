@@ -1,8 +1,5 @@
 
 services:
-  # ==========================================
-  # ETHERIA BACKEND
-  # ==========================================
   - type: web
     name: Etheria
     runtime: node
@@ -12,7 +9,7 @@ services:
     buildCommand: >
       corepack enable &&
       corepack prepare pnpm@9.15.9 --activate &&
-      pnpm install --frozen-lockfile &&
+      pnpm install --frozen-lockfile --prod=false &&
       pnpm --filter @etheria/shared build &&
       pnpm --filter @etheria/game-data build &&
       pnpm --filter @etheria/protocol build &&
@@ -42,9 +39,6 @@ services:
       - key: CLIENT_URL
         sync: false
 
-  # ==========================================
-  # ETHERIA FRONTEND
-  # ==========================================
   - type: web
     runtime: static
     name: etheria-web
@@ -52,7 +46,7 @@ services:
     buildCommand: >
       corepack enable &&
       corepack prepare pnpm@9.15.9 --activate &&
-      pnpm install --frozen-lockfile &&
+      pnpm install --frozen-lockfile --prod=false &&
       pnpm --filter @etheria/shared build &&
       pnpm --filter @etheria/game-data build &&
       pnpm --filter @etheria/protocol build &&

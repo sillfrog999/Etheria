@@ -80,7 +80,7 @@ export class ThreeWorld {
       const target = targetId ? (this.monsters.get(targetId) ?? this.remotePlayers.get(targetId)) : null;
       const position = target?.position ??
         (typeof targetX === 'number' && typeof targetY === 'number'
-          ? new any(targetX, 0, targetY)
+          ? new THREE.Vector3(targetX, 0, targetY)
           : caster?.position);
       if (position) this.showSkillEffect(position, String(abilityId));
     },
@@ -188,7 +188,7 @@ export class ThreeWorld {
   }
 
   private loadModel(target: any, path: string) {
-    this.loader.load(path, (gltf) => {
+    this.loader.load(path, (gltf: any) => {
       if (this.disposed) return;
       const model = gltf.scene;
       model.scale.setScalar(1);
@@ -360,7 +360,7 @@ export class ThreeWorld {
     ctx.fillText(label, 128, 62);
     const texture = new THREE.CanvasTexture(canvas);
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-    sprite.position.copy(position).add(new any(0, 2.3, 0));
+    sprite.position.copy(position).add(new THREE.Vector3(0, 2.3, 0));
     sprite.scale.set(2.2, 0.82, 1);
     this.scene.add(sprite);
     const start = performance.now();
@@ -394,7 +394,7 @@ export class ThreeWorld {
     });
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.045, 8, 32), ringMaterial);
     ring.rotation.x = Math.PI / 2;
-    ring.position.copy(position).add(new any(0, 0.12, 0));
+    ring.position.copy(position).add(new THREE.Vector3(0, 0.12, 0));
     this.scene.add(ring);
 
     const particles: any[] = [];
@@ -465,8 +465,8 @@ export class ThreeWorld {
       }
       return;
     }
-    const ground = new THREE.Plane(new any(0, 1, 0), 0);
-    const point = new any();
+    const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const point = new THREE.Vector3();
     if (this.raycaster.ray.intersectPlane(ground, point)) {
       this.destination = { x: point.x, y: point.z };
     }
@@ -509,7 +509,7 @@ export class ThreeWorld {
     }
 
     this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
-    const desired = new any(this.playerPos.x + 9, 13, this.playerPos.y + 11);
+    const desired = new THREE.Vector3(this.playerPos.x + 9, 13, this.playerPos.y + 11);
     this.camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
     this.camera.lookAt(this.playerPos.x, 0, this.playerPos.y);
 
@@ -550,7 +550,7 @@ export class ThreeWorld {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();
         const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((material) => material.dispose());
+        materials.forEach((material: any) => material.dispose());
       }
     });
     this.renderer.dispose();

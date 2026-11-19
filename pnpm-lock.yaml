@@ -96,6 +96,9 @@ importers:
       zustand:
         specifier: ^5.0.0
         version: 5.1.0(@types/react@18.3.31)(react@18.3.1)
+      three:
+        specifier: ^0.180.0
+        version: 0.180.0
     devDependencies:
       '@types/react':
         specifier: ^18.3.11
@@ -1312,6 +1315,9 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  three@0.180.0:
+    resolution: {tarball: https://registry.npmjs.org/three/-/three-0.180.0.tgz}
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
@@ -2548,6 +2554,8 @@ snapshots:
       mime-types: 2.1.35
 
   typescript@5.9.3: {}
+
+  three@0.180.0: {}
 
   undici-types@6.21.0: {}
 

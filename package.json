@@ -1,7 +1,9 @@
+
 {
   "name": "etheria",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "concurrently \"pnpm --filter @etheria/web dev\" \"pnpm --filter @etheria/server dev\"",
     "build": "pnpm --filter @etheria/shared build && pnpm --filter @etheria/game-data build && pnpm --filter @etheria/protocol build && pnpm --filter @etheria/world-generator build && pnpm --filter @etheria/web build && pnpm --filter @etheria/server build",

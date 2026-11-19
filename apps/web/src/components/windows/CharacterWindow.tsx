@@ -47,7 +47,7 @@ export function CharacterWindow() {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ color: '#888' }}>Carry Weight:</span>
-          <span style={{ color: '#aaa' }}>{character.stats?.carry_weight || 0} / 100 kg</span>
+          <span style={{ color: '#aaa' }}>{character.stats?.carryWeight || 0} / 100 kg</span>
         </div>
       </div>
     </div>

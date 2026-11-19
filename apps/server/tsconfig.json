@@ -1,6 +1,13 @@
+
 {
-  "@etheria/shared": ["../../packages/shared/src/index.ts"],
-  "@etheria/protocol": ["../../packages/protocol/src/index.ts"],
-  "@etheria/game-data": ["../../packages/game-data/src/index.ts"],
-  "@etheria/world-generator": ["../../packages/world-generator/src/index.ts"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "types": ["node"]
+  },
+  "include": ["src"]
 }

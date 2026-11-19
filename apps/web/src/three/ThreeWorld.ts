@@ -14,7 +14,7 @@ type Clickable = { kind: 'resource' | 'monster'; id: string };
 export class ThreeWorld {
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(48, 1, 0.1, 1200);
-  private renderer: THREE.WebGLRenderer;
+  private renderer: any;
   private clock = new THREE.Clock();
   private loader = new GLTFLoader();
   private socket: EtheriaSocket;
@@ -27,8 +27,8 @@ export class ThreeWorld {
   private pointer = new THREE.Vector2();
   private chunks = new Set<string>();
   private resourceObjects = new Map<string, any>();
-  private remotePlayers = new Map<string, THREE.Group>();
-  private monsters = new Map<string, THREE.Group>();
+  private remotePlayers = new Map<string, any>();
+  private monsters = new Map<string, any>();
   private lastMoveSent = 0;
   private frame = 0;
   private disposed = false;
@@ -164,7 +164,7 @@ export class ThreeWorld {
     this.scene.add(ground);
   }
 
-  private createActor(group: THREE.Group, bodyColor: number, cloakColor: number) {
+  private createActor(group: any, bodyColor: number, cloakColor: number) {
     const body = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.28, 0.62, 4, 8),
       new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.82 })
@@ -187,12 +187,12 @@ export class ThreeWorld {
     group.add(body, cloak, head);
   }
 
-  private loadModel(target: THREE.Group, path: string) {
+  private loadModel(target: any, path: string) {
     this.loader.load(path, (gltf) => {
       if (this.disposed) return;
       const model = gltf.scene;
       model.scale.setScalar(1);
-      model.traverse((node) => {
+      model.traverse((node: any) => {
         if (node instanceof THREE.Mesh) {
           node.castShadow = true;
           node.receiveShadow = true;
@@ -546,7 +546,7 @@ export class ThreeWorld {
     this.socket.off('combat:monster_death', this.handlers.monsterDeath);
     this.socket.off('combat:damage', this.handlers.damage);
     this.socket.off('combat:ability_used', this.handlers.abilityUsed);
-    this.scene.traverse((object) => {
+    this.scene.traverse((object: any) => {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();
         const materials = Array.isArray(object.material) ? object.material : [object.material];

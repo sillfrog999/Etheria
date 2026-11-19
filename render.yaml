@@ -10,12 +10,14 @@ services:
     region: singapore
 
     buildCommand: >
-      npx --yes pnpm@9 install &&
-      npx --yes pnpm@9 --filter @etheria/shared build &&
-      npx --yes pnpm@9 --filter @etheria/game-data build &&
-      npx --yes pnpm@9 --filter @etheria/protocol build &&
-      npx --yes pnpm@9 --filter @etheria/world-generator build &&
-      npx --yes pnpm@9 --filter @etheria/server build
+      corepack enable &&
+      corepack prepare pnpm@9.15.9 --activate &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @etheria/shared build &&
+      pnpm --filter @etheria/game-data build &&
+      pnpm --filter @etheria/protocol build &&
+      pnpm --filter @etheria/world-generator build &&
+      pnpm --filter @etheria/server build
 
     startCommand: node apps/server/dist/index.js
 
@@ -24,6 +26,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
 
       - key: SUPABASE_URL
         sync: false
@@ -45,11 +50,13 @@ services:
     name: etheria-web
 
     buildCommand: >
-      npx --yes pnpm@9 install &&
-      npx --yes pnpm@9 --filter @etheria/shared build &&
-      npx --yes pnpm@9 --filter @etheria/game-data build &&
-      npx --yes pnpm@9 --filter @etheria/protocol build &&
-      npx --yes pnpm@9 --filter @etheria/web build
+      corepack enable &&
+      corepack prepare pnpm@9.15.9 --activate &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @etheria/shared build &&
+      pnpm --filter @etheria/game-data build &&
+      pnpm --filter @etheria/protocol build &&
+      pnpm --filter @etheria/web build
 
     staticPublishPath: apps/web/dist
 
@@ -64,6 +71,9 @@ services:
         destination: /index.html
 
     envVars:
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
+
       - key: VITE_API_URL
         sync: false
 

@@ -8,9 +8,6 @@ import { randomUUID } from 'node:crypto';
 const TRADE_REQUEST_TIMEOUT_MS = 30000;
 const TRADE_SESSION_TIMEOUT_MS = 300000;
 const MAX_TRADE_RANGE = 5;
-const TRADE_REQUEST_TIMEOUT_MS = 30000;
-const TRADE_SESSION_TIMEOUT_MS = 300000; // 5 minutes
-const MAX_TRADE_RANGE = 5;
 
 export function handleTrade(io: GameServer, socket: GameSocket, gameState: GameStateManager, env: Env) {
   // ===== Trade Request =====

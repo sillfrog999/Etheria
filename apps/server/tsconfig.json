@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "node16",
+    "module": "node16",
+    "target": "ES2022",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "paths": {
+      "@etheria/shared": ["../../packages/shared/src/index.ts"],
+      "@etheria/protocol": ["../../packages/protocol/src/index.ts"],
+      "@etheria/game-data": ["../../packages/game-data/src/index.ts"],
+      "@etheria/world-generator": ["../../packages/world-generator/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

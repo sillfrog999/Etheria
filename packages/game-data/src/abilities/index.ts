@@ -1,0 +1,46 @@
+import type { AbilityDefinition } from '@etheria/shared';
+
+export const ABILITY_DATABASE: Record<string, AbilityDefinition> = {
+  // MAGE
+  basic_attack: { id:'basic_attack', name:'Basic Attack', classes:['mage','fighter','assassin','ranger'], description:'A standard attack.', manaCost:0, cooldown:1200, range:2, targetType:'enemy', iconKey:'ability_basic_attack', animationKey:'fx_basic_attack', levelRequired:1, effects:[{ type:'damage', damageType:'physical', baseDamage:10, scalingStat:'attack', scalingFactor:0.5 }] },
+  fireball: { id:'fireball', name:'Fireball', classes:['mage'], description:'Launch a ball of fire dealing magic damage.', manaCost:25, cooldown:3000, range:8, targetType:'enemy', iconKey:'ability_fireball', animationKey:'fx_fireball', levelRequired:1, effects:[{ type:'damage', damageType:'magical', baseDamage:35, scalingStat:'magicPower', scalingFactor:0.5 }] },
+  ice_nova: { id:'ice_nova', name:'Ice Nova', classes:['mage'], description:'Unleash a frost nova that freezes nearby enemies.', manaCost:40, cooldown:8000, range:4, targetType:'area', iconKey:'ability_ice_nova', animationKey:'fx_ice_nova', levelRequired:10, effects:[{ type:'damage', damageType:'magical', baseDamage:25, scalingStat:'magicPower', scalingFactor:0.4, radius:4 },{ type:'debuff', value:3, duration:3000 }] },
+  arcane_bolt: { id:'arcane_bolt', name:'Arcane Bolt', classes:['mage'], description:'A fast bolt of arcane energy.', manaCost:15, cooldown:1500, range:10, targetType:'enemy', iconKey:'ability_arcane_bolt', animationKey:'fx_arcane_bolt', levelRequired:1, effects:[{ type:'damage', damageType:'magical', baseDamage:20, scalingStat:'magicPower', scalingFactor:0.6 }] },
+  blink: { id:'blink', name:'Blink', classes:['mage'], description:'Teleport instantly to target location.', manaCost:50, cooldown:12000, range:7, targetType:'self', iconKey:'ability_blink', animationKey:'fx_blink', levelRequired:20, effects:[{ type:'teleport' }] },
+  arcane_shield: { id:'arcane_shield', name:'Arcane Shield', classes:['mage'], description:'Surround yourself with a magical absorbing shield.', manaCost:60, cooldown:20000, range:0, targetType:'self', iconKey:'ability_arcane_shield', animationKey:'fx_arcane_shield', levelRequired:15, effects:[{ type:'buff', value:50, duration:10000 }] },
+  healing_wave: { id:'healing_wave', name:'Healing Wave', classes:['mage'], description:'Channel restoration magic to heal yourself or an ally.', manaCost:45, cooldown:5000, range:5, targetType:'ally', iconKey:'ability_healing_wave', animationKey:'fx_heal', levelRequired:10, effects:[{ type:'heal', value:80, scalingStat:'magicPower', scalingFactor:0.3 }] },
+  meteor: { id:'meteor', name:'Meteor', classes:['mage'], description:'Call down a catastrophic meteor for massive area damage.', manaCost:100, cooldown:30000, range:12, targetType:'area', iconKey:'ability_meteor', animationKey:'fx_meteor', levelRequired:40, effects:[{ type:'damage', damageType:'magical', baseDamage:150, scalingStat:'magicPower', scalingFactor:1.0, radius:5 }] },
+  // FIGHTER
+  heavy_strike: { id:'heavy_strike', name:'Heavy Strike', classes:['fighter'], description:'A powerful strike dealing 150% weapon damage.', manaCost:10, cooldown:3000, range:1.5, targetType:'enemy', iconKey:'ability_heavy_strike', animationKey:'fx_heavy_strike', levelRequired:1, effects:[{ type:'damage', damageType:'physical', baseDamage:20, scalingStat:'strength', scalingFactor:0.7 }] },
+  shield_bash: { id:'shield_bash', name:'Shield Bash', classes:['fighter'], description:'Bash the enemy with your shield, stunning them.', manaCost:15, cooldown:8000, range:1.5, targetType:'enemy', iconKey:'ability_shield_bash', animationKey:'fx_shield_bash', levelRequired:10, effects:[{ type:'damage', damageType:'physical', baseDamage:10, scalingStat:'strength', scalingFactor:0.3 },{ type:'debuff', value:0, duration:2000 }] },
+  charge: { id:'charge', name:'Charge', classes:['fighter'], description:'Charge at an enemy, dealing damage and closing distance.', manaCost:20, cooldown:10000, range:6, targetType:'enemy', iconKey:'ability_charge', animationKey:'fx_charge', levelRequired:15, effects:[{ type:'damage', damageType:'physical', baseDamage:30, scalingStat:'strength', scalingFactor:0.5 }] },
+  counterattack: { id:'counterattack', name:'Counterattack', classes:['fighter'], description:'Enter a stance that retaliates against the next hit.', manaCost:25, cooldown:15000, range:0, targetType:'self', iconKey:'ability_counterattack', animationKey:'fx_counter', levelRequired:20, effects:[{ type:'buff', value:20, duration:5000 }] },
+  whirlwind: { id:'whirlwind', name:'Whirlwind', classes:['fighter'], description:'Spin with weapon extended, hitting all nearby enemies.', manaCost:35, cooldown:12000, range:2, targetType:'area', iconKey:'ability_whirlwind', animationKey:'fx_whirlwind', levelRequired:25, effects:[{ type:'damage', damageType:'physical', baseDamage:40, scalingStat:'strength', scalingFactor:0.6, radius:2 }] },
+  // ASSASSIN
+  shadow_step: { id:'shadow_step', name:'Shadow Step', classes:['assassin'], description:'Dash behind a target for a backstab setup.', manaCost:20, cooldown:8000, range:5, targetType:'enemy', iconKey:'ability_shadow_step', animationKey:'fx_shadow_step', levelRequired:1, effects:[{ type:'teleport' }] },
+  smoke_veil: { id:'smoke_veil', name:'Smoke Veil', classes:['assassin'], description:'Throw a smoke bomb and enter stealth.', manaCost:30, cooldown:15000, range:0, targetType:'self', iconKey:'ability_smoke_veil', animationKey:'fx_smoke', levelRequired:10, effects:[{ type:'stealth', duration:8000 }] },
+  ambush: { id:'ambush', name:'Ambush', classes:['assassin'], description:'Strike from stealth for massive burst damage.', manaCost:25, cooldown:2000, range:1.5, targetType:'enemy', iconKey:'ability_ambush', animationKey:'fx_ambush', levelRequired:15, effects:[{ type:'damage', damageType:'physical', baseDamage:60, scalingStat:'attack', scalingFactor:0.8 }] },
+  backstab: { id:'backstab', name:'Backstab', classes:['assassin'], description:'Stab the target in the back for critical damage.', manaCost:15, cooldown:5000, range:1.5, targetType:'enemy', iconKey:'ability_backstab', animationKey:'fx_backstab', levelRequired:5, effects:[{ type:'damage', damageType:'physical', baseDamage:45, scalingStat:'attack', scalingFactor:0.9 }] },
+  evasive_roll: { id:'evasive_roll', name:'Evasive Roll', classes:['assassin'], description:'Roll in a direction, evading the next attack.', manaCost:20, cooldown:6000, range:3, targetType:'self', iconKey:'ability_evasive_roll', animationKey:'fx_roll', levelRequired:1, effects:[{ type:'buff', value:100, duration:1000 }] },
+  // RANGER
+  quick_shot: { id:'quick_shot', name:'Quick Shot', classes:['ranger'], description:'Rapidly fire at a target.', manaCost:10, cooldown:1000, range:10, targetType:'enemy', iconKey:'ability_quick_shot', animationKey:'fx_quick_shot', levelRequired:1, effects:[{ type:'damage', damageType:'ranged', baseDamage:18, scalingStat:'attack', scalingFactor:0.5 }] },
+  piercing_shot: { id:'piercing_shot', name:'Piercing Shot', classes:['ranger'], description:'Fire a shot that pierces through multiple enemies.', manaCost:20, cooldown:5000, range:12, targetType:'enemy', iconKey:'ability_piercing_shot', animationKey:'fx_piercing_shot', levelRequired:10, effects:[{ type:'damage', damageType:'ranged', baseDamage:35, scalingStat:'attack', scalingFactor:0.7 }] },
+  explosive_arrow: { id:'explosive_arrow', name:'Explosive Arrow', classes:['ranger'], description:'Fire an explosive arrow that detonates on impact.', manaCost:35, cooldown:10000, range:10, targetType:'area', iconKey:'ability_explosive_arrow', animationKey:'fx_explosion', levelRequired:20, effects:[{ type:'damage', damageType:'ranged', baseDamage:50, scalingStat:'attack', scalingFactor:0.6, radius:3 }] },
+  tactical_roll: { id:'tactical_roll', name:'Tactical Roll', classes:['ranger'], description:'Roll to a new position while firing.', manaCost:25, cooldown:8000, range:4, targetType:'self', iconKey:'ability_tactical_roll', animationKey:'fx_tactical_roll', levelRequired:15, effects:[{ type:'buff', value:2, duration:3000 }] },
+  reload: { id:'reload', name:'Reload', classes:['ranger'], description:'Quickly reload, reducing next attack cooldown.', manaCost:5, cooldown:4000, range:0, targetType:'self', iconKey:'ability_reload', animationKey:'fx_reload', levelRequired:1, effects:[{ type:'buff', value:0, duration:2000 }] },
+};
+
+export function getAbility(id: string): AbilityDefinition | undefined {
+  return ABILITY_DATABASE[id];
+}
+
+export function getAbilitiesForClass(className: string): AbilityDefinition[] {
+  return Object.values(ABILITY_DATABASE).filter(a => a.classes.includes(className));
+}
+
+export const DEFAULT_HOTBAR: Record<string, string[]> = {
+  mage: ['basic_attack','arcane_bolt','fireball','ice_nova','arcane_shield','healing_wave','','','','','',''],
+  fighter: ['basic_attack','heavy_strike','shield_bash','charge','counterattack','whirlwind','','','','','',''],
+  assassin: ['basic_attack','shadow_step','backstab','ambush','smoke_veil','evasive_roll','','','','','',''],
+  ranger: ['basic_attack','quick_shot','piercing_shot','reload','explosive_arrow','tactical_roll','','','','','',''],
+};

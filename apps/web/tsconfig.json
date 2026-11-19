@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@etheria/shared": ["../../packages/shared/src/index.ts"],
+      "@etheria/protocol": ["../../packages/protocol/src/index.ts"],
+      "@etheria/game-data": ["../../packages/game-data/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

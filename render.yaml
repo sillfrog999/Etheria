@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: etheria-server
+    env: node
+    plan: starter
+    buildCommand: "npm install -g pnpm && pnpm install && pnpm --filter @etheria/shared build && pnpm --filter @etheria/game-data build && pnpm --filter @etheria/protocol build && pnpm --filter @etheria/world-generator build && pnpm --filter @etheria/server build"
+    startCommand: "node apps/server/dist/index.js"
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+
+  - type: static
+    name: etheria-web
+    buildCommand: "npm install -g pnpm && pnpm install && pnpm --filter @etheria/shared build && pnpm --filter @etheria/game-data build && pnpm --filter @etheria/protocol build && pnpm --filter @etheria/web build"
+    staticPublishPath: apps/web/dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_SOCKET_URL
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false

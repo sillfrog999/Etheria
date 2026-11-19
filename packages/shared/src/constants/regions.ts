@@ -1,0 +1,77 @@
+import type { WorldRegion } from '../types/world.js';
+
+export const REGIONS: Record<string, WorldRegion> = {
+  greenfall: {
+    id: 'greenfall',
+    name: 'Greenfall',
+    description: 'A lush starting grassland with forests, rivers, and beginner challenges.',
+    pvpZone: 'safe',
+    minLevel: 1,
+    spawnPoint: { x: 16, y: 16 },
+    bounds: { minX: 0, minY: 0, maxX: 256, maxY: 256 },
+    ambientColor: '#7ec850',
+  },
+  aurelia: {
+    id: 'aurelia',
+    name: 'Aurelia',
+    description: 'The grand central city — marketplace, bank, crafting stations, and guilds.',
+    pvpZone: 'safe',
+    minLevel: 1,
+    spawnPoint: { x: 32, y: 32 },
+    bounds: { minX: 256, minY: 0, maxX: 384, maxY: 128 },
+    ambientColor: '#d4af37',
+  },
+  silverwood: {
+    id: 'silverwood',
+    name: 'Silverwood',
+    description: 'An ancient forest rich with rare wood, herbs, and ruins.',
+    pvpZone: 'normal',
+    minLevel: 10,
+    spawnPoint: { x: 0, y: 256 },
+    bounds: { minX: 0, minY: 256, maxX: 192, maxY: 384 },
+    ambientColor: '#4a7c59',
+  },
+  ashen_mountains: {
+    id: 'ashen_mountains',
+    name: 'Ashen Mountains',
+    description: 'Rugged mountains with iron, coal, and rare minerals.',
+    pvpZone: 'normal',
+    minLevel: 20,
+    spawnPoint: { x: 256, y: 256 },
+    bounds: { minX: 256, minY: 256, maxX: 384, maxY: 384 },
+    ambientColor: '#8b7355',
+  },
+  frostmere: {
+    id: 'frostmere',
+    name: 'Frostmere',
+    description: 'A frozen wasteland of snow, ice crystals, and silver ore.',
+    pvpZone: 'dangerous',
+    minLevel: 35,
+    spawnPoint: { x: 400, y: 0 },
+    bounds: { minX: 384, minY: 0, maxX: 512, maxY: 192 },
+    ambientColor: '#a8d8ea',
+  },
+  emberlands: {
+    id: 'emberlands',
+    name: 'Emberlands',
+    description: 'Volcanic terrain with obsidian, rare ore, and open PvP.',
+    pvpZone: 'full_pvp',
+    minLevel: 50,
+    spawnPoint: { x: 400, y: 256 },
+    bounds: { minX: 384, minY: 256, maxX: 512, maxY: 384 },
+    ambientColor: '#ff4500',
+  },
+  the_void: {
+    id: 'the_void',
+    name: 'The Void',
+    description: 'Endgame territory of pure chaos — high-level enemies, rare resources, full PvP.',
+    pvpZone: 'full_pvp',
+    minLevel: 70,
+    spawnPoint: { x: 512, y: 512 },
+    bounds: { minX: 512, minY: 512, maxX: 640, maxY: 640 },
+    ambientColor: '#1a0033',
+  },
+};
+
+export const STARTING_REGION = 'greenfall';
+export const STARTING_POSITION = REGIONS['greenfall']!.spawnPoint;

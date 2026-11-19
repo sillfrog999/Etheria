@@ -68,7 +68,21 @@ export class ThreeWorld {
     damage: ({ targetId, damage, isCrit }: any) => {
       const target = this.monsters.get(targetId) ??
         (targetId === useGameStore.getState().character?.id ? this.player : null);
-      if (target) this.showDamage(target.position, damage, Boolean(isCrit));
+      if (target) {
+        this.showDamage(target.position, damage, Boolean(isCrit));
+        this.showSkillEffect(target.position, isCrit ? 'arcane' : 'impact');
+      }
+    },
+    abilityUsed: ({ casterId, abilityId, targetId, targetX, targetY }: any) => {
+      const caster = casterId === useGameStore.getState().character?.id
+        ? this.player
+        : this.remotePlayers.get(casterId);
+      const target = targetId ? (this.monsters.get(targetId) ?? this.remotePlayers.get(targetId)) : null;
+      const position = target?.position ??
+        (typeof targetX === 'number' && typeof targetY === 'number'
+          ? new THREE.Vector3(targetX, 0, targetY)
+          : caster?.position);
+      if (position) this.showSkillEffect(position, String(abilityId));
     },
   };
 
@@ -112,6 +126,7 @@ export class ThreeWorld {
     this.socket.on('combat:monster_update', this.handlers.monsterUpdate);
     this.socket.on('combat:monster_death', this.handlers.monsterDeath);
     this.socket.on('combat:damage', this.handlers.damage);
+    this.socket.on('combat:ability_used', this.handlers.abilityUsed);
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -363,6 +378,62 @@ export class ThreeWorld {
     requestAnimationFrame(tick);
   }
 
+  private showSkillEffect(position: THREE.Vector3, abilityId: string) {
+    const key = abilityId.toLowerCase();
+    const color = key.includes('fire') ? 0xff793d
+      : key.includes('ice') || key.includes('frost') ? 0x82dfff
+      : key.includes('heal') || key.includes('light') ? 0x8ee6a5
+      : key.includes('shadow') || key.includes('void') ? 0x9b79e8
+      : 0xc9a7ff;
+
+    const ringMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+    });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.045, 8, 32), ringMaterial);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.copy(position).add(new THREE.Vector3(0, 0.12, 0));
+    this.scene.add(ring);
+
+    const particles: THREE.Mesh[] = [];
+    const particleMaterial = new THREE.MeshBasicMaterial({ color, transparent: true });
+    for (let i = 0; i < 12; i++) {
+      const particle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), particleMaterial);
+      particle.position.copy(ring.position);
+      particles.push(particle);
+      this.scene.add(particle);
+    }
+
+    const start = performance.now();
+    const tick = () => {
+      if (this.disposed) return;
+      const progress = Math.min(1, (performance.now() - start) / 520);
+      ring.scale.setScalar(1 + progress * 5);
+      ringMaterial.opacity = 0.9 * (1 - progress);
+      particles.forEach((particle, index) => {
+        const angle = (index / particles.length) * Math.PI * 2;
+        const radius = 0.35 + progress * 1.35;
+        particle.position.x = position.x + Math.cos(angle) * radius;
+        particle.position.z = position.z + Math.sin(angle) * radius;
+        particle.position.y = position.y + 0.2 + progress * (0.6 + (index % 3) * 0.12);
+        particle.scale.setScalar(1 - progress);
+      });
+      if (progress >= 1) {
+        this.scene.remove(ring);
+        ring.geometry.dispose();
+        ringMaterial.dispose();
+        particles.forEach((particle) => {
+          this.scene.remove(particle);
+          particle.geometry.dispose();
+        });
+        particleMaterial.dispose();
+      } else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
   private requestChunks() {
     if (!this.socket.connected) return;
     const cx = Math.floor(this.playerPos.x / CHUNK_SIZE);
@@ -474,6 +545,7 @@ export class ThreeWorld {
     this.socket.off('combat:monster_update', this.handlers.monsterUpdate);
     this.socket.off('combat:monster_death', this.handlers.monsterDeath);
     this.socket.off('combat:damage', this.handlers.damage);
+    this.socket.off('combat:ability_used', this.handlers.abilityUsed);
     this.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();

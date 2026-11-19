@@ -6,7 +6,6 @@
     "module": "ESNext",
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
     "paths": {
       "@etheria/shared": ["../shared/dist/index.d.ts"]
     }

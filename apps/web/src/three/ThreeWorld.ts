@@ -26,7 +26,7 @@ export class ThreeWorld {
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private chunks = new Set<string>();
-  private resourceObjects = new Map<string, THREE.Object3D>();
+  private resourceObjects = new Map<string, any>();
   private remotePlayers = new Map<string, THREE.Group>();
   private monsters = new Map<string, THREE.Group>();
   private lastMoveSent = 0;
@@ -80,7 +80,7 @@ export class ThreeWorld {
       const target = targetId ? (this.monsters.get(targetId) ?? this.remotePlayers.get(targetId)) : null;
       const position = target?.position ??
         (typeof targetX === 'number' && typeof targetY === 'number'
-          ? new THREE.Vector3(targetX, 0, targetY)
+          ? new any(targetX, 0, targetY)
           : caster?.position);
       if (position) this.showSkillEffect(position, String(abilityId));
     },
@@ -344,7 +344,7 @@ export class ThreeWorld {
     this.loadModel(group, `${MODEL_ROOT}/monsters/greenfall/creature.glb`);
   }
 
-  private showDamage(position: THREE.Vector3, damage: number, critical: boolean) {
+  private showDamage(position: any, damage: number, critical: boolean) {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 96;
@@ -360,7 +360,7 @@ export class ThreeWorld {
     ctx.fillText(label, 128, 62);
     const texture = new THREE.CanvasTexture(canvas);
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-    sprite.position.copy(position).add(new THREE.Vector3(0, 2.3, 0));
+    sprite.position.copy(position).add(new any(0, 2.3, 0));
     sprite.scale.set(2.2, 0.82, 1);
     this.scene.add(sprite);
     const start = performance.now();
@@ -378,7 +378,7 @@ export class ThreeWorld {
     requestAnimationFrame(tick);
   }
 
-  private showSkillEffect(position: THREE.Vector3, abilityId: string) {
+  private showSkillEffect(position: any, abilityId: string) {
     const key = abilityId.toLowerCase();
     const color = key.includes('fire') ? 0xff793d
       : key.includes('ice') || key.includes('frost') ? 0x82dfff
@@ -394,10 +394,10 @@ export class ThreeWorld {
     });
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.045, 8, 32), ringMaterial);
     ring.rotation.x = Math.PI / 2;
-    ring.position.copy(position).add(new THREE.Vector3(0, 0.12, 0));
+    ring.position.copy(position).add(new any(0, 0.12, 0));
     this.scene.add(ring);
 
-    const particles: THREE.Mesh[] = [];
+    const particles: any[] = [];
     const particleMaterial = new THREE.MeshBasicMaterial({ color, transparent: true });
     for (let i = 0; i < 12; i++) {
       const particle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), particleMaterial);
@@ -453,7 +453,7 @@ export class ThreeWorld {
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const hits = this.raycaster.intersectObjects(this.scene.children, true);
     for (const hit of hits) {
-      let node: THREE.Object3D | null = hit.object;
+      let node: any | null = hit.object;
       while (node && !node.userData.clickable) node = node.parent;
       const clickable = node?.userData.clickable as Clickable | undefined;
       if (!clickable) continue;
@@ -465,8 +465,8 @@ export class ThreeWorld {
       }
       return;
     }
-    const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const point = new THREE.Vector3();
+    const ground = new THREE.Plane(new any(0, 1, 0), 0);
+    const point = new any();
     if (this.raycaster.ray.intersectPlane(ground, point)) {
       this.destination = { x: point.x, y: point.z };
     }
@@ -509,7 +509,7 @@ export class ThreeWorld {
     }
 
     this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
-    const desired = new THREE.Vector3(this.playerPos.x + 9, 13, this.playerPos.y + 11);
+    const desired = new any(this.playerPos.x + 9, 13, this.playerPos.y + 11);
     this.camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
     this.camera.lookAt(this.playerPos.x, 0, this.playerPos.y);
 

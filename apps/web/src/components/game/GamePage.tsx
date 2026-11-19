@@ -133,8 +133,6 @@ export function GamePage() {
     }
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-
       socket.off('trade:request', onTradeRequest);
       socket.off('trade:update', onTradeUpdate);
       socket.off('trade:complete', onTradeComplete);

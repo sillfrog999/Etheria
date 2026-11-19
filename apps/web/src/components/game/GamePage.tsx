@@ -1,10 +1,8 @@
 
 import React, { useEffect, useRef } from 'react';
-import Phaser from 'phaser';
 import { useGameStore } from '../../store/gameStore';
 import { getSocket } from '../../lib/socket';
-import { PreloadScene } from '../../phaser/scenes/PreloadScene';
-import { GameScene } from '../../phaser/scenes/GameScene';
+import { ThreeWorld } from '../../three/ThreeWorld';
 
 import { PlayerFrame } from '../hud/PlayerFrame';
 import { Minimap } from '../hud/Minimap';
@@ -24,7 +22,8 @@ import { SpellbookWindow } from '../windows/SpellbookWindow';
 import { WorldMapWindow } from '../windows/WorldMapWindow';
 
 export function GamePage() {
-  const gameRef = useRef<Phaser.Game | null>(null);
+  const gameRef = useRef<ThreeWorld | null>(null);
+  const worldContainerRef = useRef<HTMLDivElement | null>(null);
   const { token, character, gatheringState, setGatheringState } = useGameStore();
 
   useEffect(() => {
@@ -116,30 +115,22 @@ export function GamePage() {
     socket.on('player:equipment_update', onEquipmentUpdate);
     socket.on('chat:message', onChatMessage);
 
-    // Initialize Phaser before connecting/authenticating the socket.
-    // GameScene registers its world listeners before it starts authentication.
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      parent: 'phaser-container',
-      width: window.innerWidth,
-      height: window.innerHeight,
-      pixelArt: true,
-      roundPixels: true,
-      backgroundColor: '#0a0d14',
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-      },
-      scene: [PreloadScene, GameScene],
-    };
+    // Initialize the Three.js world and register its world listeners before auth.
+    const container = worldContainerRef.current;
+    if (!container) return;
 
-    gameRef.current = new Phaser.Game(config);
+    const world = new ThreeWorld(container, socket);
+    gameRef.current = world;
 
-    const handleResize = () => {
-      gameRef.current?.scale.resize(window.innerWidth, window.innerHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
+    // Authenticate only after the renderer has subscribed to connect:ack/world events.
+    if (token) {
+      if (socket.connected) {
+        socket.emit('auth', { token });
+      } else {
+        socket.once('connect', () => socket.emit('auth', { token }));
+        socket.connect();
+      }
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -157,7 +148,7 @@ export function GamePage() {
       socket.off('player:equipment_update', onEquipmentUpdate);
       socket.off('chat:message', onChatMessage);
 
-      gameRef.current?.destroy(true);
+      gameRef.current?.dispose();
       gameRef.current = null;
 
       socket.disconnect();
@@ -172,7 +163,8 @@ export function GamePage() {
       overflow: 'hidden'
     }}>
       <div
-        id="phaser-container"
+        ref={worldContainerRef}
+        id="three-world-container"
         style={{ width: '100%', height: '100%' }}
       />
 

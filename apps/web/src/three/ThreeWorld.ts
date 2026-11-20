@@ -447,6 +447,7 @@ export class ThreeWorld {
       }
 
       model.name = 'loaded-model';
+      model.userData.baseY = model.position.y;
       target.clear();
       target.add(model);
     }, undefined, (error: unknown) => {
@@ -773,6 +774,8 @@ export class ThreeWorld {
     const group = new THREE.Group();
     this.createActor(group, 0x9b8e70, 0x333b36);
     group.position.set(player.x, 0, player.y);
+    group.userData.animationPhase = Math.random() * Math.PI * 2;
+    group.userData.previousPosition = group.position.clone();
     this.scene.add(group);
     this.remotePlayers.set(player.characterId, group);
     this.loadModel(group, `${MODEL_ROOT}/characters/player.glb`);
@@ -824,6 +827,8 @@ export class ThreeWorld {
     group.add(label);
 
     group.position.set(monster.x, 0, monster.y);
+    group.userData.animationPhase = Math.random() * Math.PI * 2;
+    group.userData.previousPosition = group.position.clone();
     group.userData.clickable = { kind: 'monster', id: monster.id } satisfies Clickable;
     this.scene.add(group);
     this.monsters.set(monster.id, group);
@@ -985,6 +990,105 @@ export class ThreeWorld {
     this.renderer.setSize(width, height);
   }
 
+  private animateCharacter(
+    target: THREE.Object3D,
+    elapsed: number,
+    delta: number,
+    speed: number,
+    phase: number,
+    attacking = false,
+    monster = false
+  ) {
+    const model = target.getObjectByName('loaded-model') as THREE.Group | undefined;
+    if (!model) return;
+
+    const blend = THREE.MathUtils.clamp(speed / (monster ? 1.8 : 2.8), 0, 1);
+    const stride = elapsed * (monster ? 8 : 10.5) + phase;
+    const gait = Math.sin(stride);
+    const idleBreath = Math.sin(elapsed * 2.1 + phase) * 0.008;
+    const baseY = Number(model.userData.baseY ?? model.position.y);
+
+    model.position.y = THREE.MathUtils.damp(
+      model.position.y,
+      baseY + Math.abs(gait) * 0.026 * blend + idleBreath * (1 - blend),
+      12,
+      delta
+    );
+    model.rotation.x = THREE.MathUtils.damp(
+      model.rotation.x,
+      (monster ? -0.018 : 0) - blend * 0.025 - (attacking ? 0.075 : 0),
+      9,
+      delta
+    );
+    model.rotation.z = THREE.MathUtils.damp(
+      model.rotation.z,
+      Math.sin(stride * 0.5) * 0.018 * blend,
+      9,
+      delta
+    );
+
+    const bones = (model.userData.motionBones ?? []) as Array<{
+      bone: THREE.Bone;
+      base: THREE.Euler;
+      kind: string;
+      side: string;
+    }>;
+
+    for (const entry of bones) {
+      const side = entry.side === 'left' ? 1 : entry.side === 'right' ? -1 : 0;
+      const name = entry.bone.name.toLowerCase();
+      const isForearm = name.includes('lower') || name.includes('forearm');
+      const armScale = isForearm ? 0.065 : 0.105;
+      const armSwing = -gait * armScale * side * blend;
+      const legSwing = gait * 0.34 * side * blend;
+
+      if (entry.kind === 'arm') {
+        const attackOffset = attacking && entry.side === 'right' && !isForearm
+          ? -0.32
+          : 0;
+        entry.bone.rotation.x = THREE.MathUtils.damp(
+          entry.bone.rotation.x,
+          entry.base.x + armSwing,
+          13,
+          delta
+        );
+        entry.bone.rotation.z = THREE.MathUtils.damp(
+          entry.bone.rotation.z,
+          entry.base.z + attackOffset,
+          attacking ? 18 : 12,
+          delta
+        );
+      } else if (entry.kind === 'hand') {
+        entry.bone.rotation.x = THREE.MathUtils.damp(
+          entry.bone.rotation.x,
+          entry.base.x - gait * 0.035 * side * blend,
+          12,
+          delta
+        );
+      } else if (entry.kind === 'leg') {
+        entry.bone.rotation.x = THREE.MathUtils.damp(
+          entry.bone.rotation.x,
+          entry.base.x + legSwing,
+          12,
+          delta
+        );
+      } else if (entry.kind === 'torso') {
+        entry.bone.rotation.z = THREE.MathUtils.damp(
+          entry.bone.rotation.z,
+          entry.base.z + Math.sin(stride * 0.5) * 0.018 * blend,
+          9,
+          delta
+        );
+        entry.bone.rotation.x = THREE.MathUtils.damp(
+          entry.bone.rotation.x,
+          entry.base.x - blend * 0.018 - (attacking ? 0.045 : 0),
+          9,
+          delta
+        );
+      }
+    }
+  }
+
   private animate = () => {
     if (this.disposed) return;
     this.frame = requestAnimationFrame(this.animate);
@@ -1021,32 +1125,14 @@ export class ThreeWorld {
     const isMoving = this.moveVelocity.lengthSq() > 0.015;
     const elapsed = performance.now() * 0.001;
     this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
-    const playerModel = this.player.children.find((child) => child.name === 'loaded-model');
-    if (playerModel) {
-      const gait = isMoving ? Math.sin(elapsed * 11) : 0;
-      playerModel.position.y = isMoving ? Math.abs(gait) * 0.055 : 0;
-      playerModel.rotation.z = THREE.MathUtils.damp(playerModel.rotation.z, isMoving ? Math.sin(elapsed * 5.5) * 0.035 : 0, 9, delta);
-      const attacking = performance.now() < this.attackAnimUntil;
-      playerModel.rotation.x = THREE.MathUtils.damp(playerModel.rotation.x, attacking ? -0.22 : isMoving ? 0.035 : 0, attacking ? 22 : 8, delta);
-      playerModel.rotation.y = THREE.MathUtils.damp(playerModel.rotation.y, attacking ? 0.16 : 0, 18, delta);
-      const bones = (playerModel.userData.motionBones ?? []) as Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }>;
-      for (const entry of bones) {
-        const direction = entry.side === 'left' ? 1 : entry.side === 'right' ? -1 : 0;
-        if (entry.kind === 'arm') {
-          const isForearm = entry.bone.name.toLowerCase().includes('lower') ||
-            entry.bone.name.toLowerCase().includes('forearm');
-          const swing = isMoving ? gait * (isForearm ? 0.055 : 0.09) * direction : 0;
-          const slash = attacking && entry.side === 'right' && !isForearm ? -0.65 : 0;
-          entry.bone.rotation.x = THREE.MathUtils.damp(entry.bone.rotation.x, entry.base.x + swing, 12, delta);
-          entry.bone.rotation.z = THREE.MathUtils.damp(entry.bone.rotation.z, entry.base.z + slash, attacking ? 24 : 10, delta);
-        } else if (entry.kind === 'leg') {
-          const swing = isMoving ? gait * 0.48 * direction : 0;
-          entry.bone.rotation.x = THREE.MathUtils.damp(entry.bone.rotation.x, entry.base.x + swing, 12, delta);
-        } else if (entry.kind === 'torso') {
-          entry.bone.rotation.z = THREE.MathUtils.damp(entry.bone.rotation.z, entry.base.z + (isMoving ? Math.sin(elapsed * 5.5) * 0.025 : 0), 8, delta);
-        }
-      }
-    }
+    this.animateCharacter(
+      this.player,
+      elapsed,
+      delta,
+      this.moveVelocity.length(),
+      0,
+      performance.now() < this.attackAnimUntil
+    );
     // Face the actual movement direction for both keyboard and click-to-move.
     if (isMoving) {
       this.player.rotation.y = Math.atan2(this.moveVelocity.x, this.moveVelocity.y);
@@ -1070,12 +1156,39 @@ export class ThreeWorld {
     for (const remote of this.remotePlayers.values()) {
       const destination = remote.userData.destination as THREE.Vector3 | undefined;
       if (destination) remote.position.lerp(destination, 1 - Math.pow(0.0001, delta));
+      const previous = remote.userData.previousPosition as THREE.Vector3 | undefined;
+      const speed = previous ? remote.position.distanceTo(previous) / Math.max(delta, 0.001) : 0;
+      remote.userData.previousPosition = remote.position.clone();
+      this.animateCharacter(
+        remote,
+        elapsed,
+        delta,
+        speed,
+        Number(remote.userData.animationPhase ?? 0)
+      );
     }
     for (const monster of this.monsters.values()) {
       const destination = monster.userData.destination as THREE.Vector3 | undefined;
       if (destination) monster.position.lerp(destination, 1 - Math.pow(0.001, delta));
-      if (monster.userData.state === 'attack') monster.rotation.z = Math.sin(performance.now() * 0.018) * 0.06;
-      else monster.rotation.z *= 0.85;
+      const previous = monster.userData.previousPosition as THREE.Vector3 | undefined;
+      const speed = previous ? monster.position.distanceTo(previous) / Math.max(delta, 0.001) : 0;
+      monster.userData.previousPosition = monster.position.clone();
+      const attacking = monster.userData.state === 'attack';
+      this.animateCharacter(
+        monster,
+        elapsed,
+        delta,
+        speed,
+        Number(monster.userData.animationPhase ?? 0),
+        attacking,
+        true
+      );
+      monster.rotation.z = THREE.MathUtils.damp(
+        monster.rotation.z,
+        attacking ? -0.035 : 0,
+        8,
+        delta
+      );
     }
 
     const now = performance.now();

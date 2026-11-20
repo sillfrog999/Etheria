@@ -364,8 +364,9 @@ export class ThreeWorld {
         const currentDirection = elbow.sub(shoulder);
         if (currentDirection.lengthSq() < 0.000001) continue;
 
-        const outward = side === 'left' ? -0.22 : 0.22;
-        const targetDirection = new THREE.Vector3(outward, -1, 0).normalize();
+        // Keep the arms relaxed but visibly separated from the torso.
+        const outward = side === 'left' ? -0.55 : 0.55;
+        const targetDirection = new THREE.Vector3(outward, -0.84, 0).normalize();
         const worldDelta = new THREE.Quaternion().setFromUnitVectors(
           currentDirection.normalize(),
           targetDirection

@@ -426,3 +426,53 @@ body, html {
 .wow-chat { bottom: 22px !important; }
 @media (max-width: 900px) { .wow-chat { bottom: 132px !important; } }
 @media (max-width: 560px) { .wow-chat { bottom: 76px !important; } }
+
+
+/* Keep utility/gold menu in its own right-side column, clear of the action bar */
+.hud-menu-bar {
+  top: 50% !important;
+  right: 16px !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: translateY(-50%);
+  width: 148px;
+  max-width: 148px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 9px !important;
+}
+.hud-menu-bar > div:first-child {
+  margin: 0 0 3px !important;
+  padding: 5px 0 8px;
+  border-bottom: 1px solid rgba(194,160,99,.35);
+  text-align: center;
+  font: bold 13px Georgia, serif !important;
+}
+.hud-menu-bar .fantasy-button {
+  width: 100%;
+  text-align: left;
+  padding: 7px 9px !important;
+}
+@media (max-width: 900px) {
+  .hud-menu-bar {
+    top: 50% !important;
+    right: 8px !important;
+    bottom: auto !important;
+    width: 132px;
+    max-width: 132px !important;
+  }
+}
+@media (max-width: 560px) {
+  .hud-menu-bar {
+    top: 50% !important;
+    right: 6px !important;
+    bottom: auto !important;
+    width: 118px;
+    max-width: 118px !important;
+    padding: 6px !important;
+  }
+  .hud-menu-bar .fantasy-button { font-size: 10px !important; padding: 6px !important; }
+}

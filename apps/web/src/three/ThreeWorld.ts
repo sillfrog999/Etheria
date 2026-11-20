@@ -163,30 +163,6 @@ export class ThreeWorld {
   }
 
 
-  private addSystemMessage(content: string) {
-    const now = Date.now();
-    useGameStore.getState().addChatMessage({
-      id: `system-${now}-${Math.random().toString(36).slice(2, 7)}`,
-      senderId: 'system',
-      senderName: 'Hệ thống',
-      content,
-      channel: 'system',
-      timestamp: now,
-    } as any);
-  }
-
-  private resourceNameFromNode(nodeId: string) {
-    const resourceId = String(nodeId ?? '').split('_').slice(3).join('_');
-    const names: Record<string, string> = {
-      wood: 'Gỗ', ancient_wood: 'Gỗ cổ đại', copper_ore: 'Quặng đồng',
-      tin_ore: 'Quặng thiếc', iron_ore: 'Quặng sắt', coal: 'Than',
-      silver_ore: 'Quặng bạc', gold_ore: 'Quặng vàng', mithril_ore: 'Mithril',
-      crystal_shards: 'Mảnh tinh thể', herbs: 'Thảo mộc', rare_herbs: 'Thảo mộc hiếm',
-      fiber: 'Sợi', fish: 'Cá', hide: 'Da thú',
-    };
-    return names[resourceId] ?? (resourceId.replace(/_/g, ' ') || 'tài nguyên');
-  }
-
   private addGreenfallVillage() {
     const makeHouse = (x: number, z: number, scale = 1) => {
       const house = new THREE.Group();

@@ -570,7 +570,6 @@ export class ThreeWorld {
     );
     terrain.receiveShadow = true;
     this.scene.add(terrain);
-    this.addGreenfallDetails(chunk);
 
     for (const object of chunk.objects ?? []) {
       const prop = this.createProp(String(object.type), object.id);
@@ -588,118 +587,6 @@ export class ThreeWorld {
     }
   }
 
-
-  /**
-   * Adds small, deterministic low-poly details independently of the sparse
-   * gameplay object list. These are decorative only and do not affect collision
-   * or gathering, so Greenfall remains visually populated on every client.
-   */
-  private addGreenfallDetails(chunk: WorldChunk) {
-    if (chunk.coord.region !== 'greenfall') return;
-
-    const flowers = new THREE.InstancedMesh(
-      new THREE.ConeGeometry(0.09, 0.2, 5),
-      new THREE.MeshStandardMaterial({ color: 0xd9b64c, roughness: 0.9, flatShading: true }),
-      128
-    );
-    const redFlowers = new THREE.InstancedMesh(
-      new THREE.IcosahedronGeometry(0.075, 0),
-      new THREE.MeshStandardMaterial({ color: 0xb94c42, roughness: 0.9, flatShading: true }),
-      128
-    );
-    const rocks = new THREE.InstancedMesh(
-      new THREE.DodecahedronGeometry(0.22, 0),
-      new THREE.MeshStandardMaterial({ color: 0x74796f, roughness: 1, flatShading: true }),
-      96
-    );
-    const greenCrystals = new THREE.InstancedMesh(
-      new THREE.OctahedronGeometry(0.19, 0),
-      new THREE.MeshStandardMaterial({ color: 0x9bcf83, roughness: 0.45, metalness: 0.08, flatShading: true }),
-      64
-    );
-    const blueCrystals = new THREE.InstancedMesh(
-      new THREE.OctahedronGeometry(0.17, 0),
-      new THREE.MeshStandardMaterial({ color: 0x83c9df, roughness: 0.4, metalness: 0.1, flatShading: true }),
-      64
-    );
-
-    const dummy = new THREE.Object3D();
-    let flowerCount = 0;
-    let redCount = 0;
-    let rockCount = 0;
-    let greenCount = 0;
-    let blueCount = 0;
-
-    for (let z = 0; z < CHUNK_SIZE; z++) {
-      for (let x = 0; x < CHUNK_SIZE; x++) {
-        const tile = chunk.tiles[z]?.[x];
-        if (!tile?.walkable || (tile.type !== 'grass' && tile.type !== 'dirt')) continue;
-
-        const worldX = chunk.coord.chunkX * CHUNK_SIZE + x;
-        const worldZ = chunk.coord.chunkY * CHUNK_SIZE + z;
-        const hash = (Math.imul(worldX + 8191, 73856093) ^ Math.imul(worldZ - 4099, 19349663)) >>> 0;
-        const y = (tile.elevation || 0) * 0.12;
-
-        if (hash % 17 === 0 && flowerCount < 128) {
-          dummy.position.set(worldX + 0.35, y + 0.1, worldZ + 0.4);
-          dummy.rotation.set(0, (hash % 360) * Math.PI / 180, 0);
-          dummy.scale.setScalar(0.65 + (hash % 5) * 0.12);
-          dummy.updateMatrix();
-          flowers.setMatrixAt(flowerCount++, dummy.matrix);
-        } else if (hash % 19 === 0 && redCount < 128) {
-          dummy.position.set(worldX + 0.65, y + 0.09, worldZ + 0.6);
-          dummy.rotation.set(0, (hash % 360) * Math.PI / 180, 0);
-          dummy.scale.setScalar(0.7 + (hash % 4) * 0.12);
-          dummy.updateMatrix();
-          redFlowers.setMatrixAt(redCount++, dummy.matrix);
-        }
-
-        if (hash % 67 === 0 && rockCount < 96) {
-          dummy.position.set(worldX + 0.5, y + 0.13, worldZ + 0.5);
-          dummy.rotation.set(0, (hash % 360) * Math.PI / 180, 0);
-          dummy.scale.set(0.8 + (hash % 5) * 0.1, 0.65 + (hash % 3) * 0.15, 0.8);
-          dummy.updateMatrix();
-          rocks.setMatrixAt(rockCount++, dummy.matrix);
-        }
-
-        if (hash % 113 === 0 && greenCount < 64) {
-          dummy.position.set(worldX + 0.5, y + 0.2, worldZ + 0.5);
-          dummy.rotation.set(0, (hash % 360) * Math.PI / 180, 0);
-          dummy.scale.setScalar(0.8 + (hash % 4) * 0.15);
-          dummy.updateMatrix();
-          greenCrystals.setMatrixAt(greenCount++, dummy.matrix);
-        } else if (hash % 127 === 0 && blueCount < 64) {
-          dummy.position.set(worldX + 0.5, y + 0.18, worldZ + 0.5);
-          dummy.rotation.set(0, (hash % 360) * Math.PI / 180, 0);
-          dummy.scale.setScalar(0.8 + (hash % 4) * 0.15);
-          dummy.updateMatrix();
-          blueCrystals.setMatrixAt(blueCount++, dummy.matrix);
-        }
-      }
-    }
-
-    const batches = [
-      [flowers, flowerCount],
-      [redFlowers, redCount],
-      [rocks, rockCount],
-      [greenCrystals, greenCount],
-      [blueCrystals, blueCount],
-    ] as const;
-
-    for (const [mesh, count] of batches) {
-      if (!count) {
-        mesh.geometry.dispose();
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        materials.forEach((material) => material.dispose());
-        continue;
-      }
-      mesh.count = count;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.instanceMatrix.needsUpdate = true;
-      this.scene.add(mesh);
-    }
-  }
 
   private createProp(type: string, seed = '') {
     const group = new THREE.Group();
@@ -722,27 +609,8 @@ export class ThreeWorld {
       const flowers = ['Flower_3_Group.gltf', 'Flower_4_Group.gltf'];
       const file = flowers[hash % flowers.length]!;
 
-      const fallback = new THREE.Mesh(
-        new THREE.SphereGeometry(0.18, 8, 8),
-        new THREE.MeshStandardMaterial({ color: 0xc68b9b })
-      );
-      fallback.position.y = 0.2;
-      group.add(fallback);
-
       this.loadNatureModel(group, `${this.natureRoot}/${file}`, 0.8);
     } else {
-      const fallback = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(0.55, 0),
-        new THREE.MeshStandardMaterial({
-          color: 0x62665b,
-          roughness: 1,
-          flatShading: true
-        })
-      );
-      fallback.position.y = 0.38;
-      fallback.castShadow = true;
-      group.add(fallback);
-
       const index = hash % 3 + 1;
       this.loadNatureModel(
         group,

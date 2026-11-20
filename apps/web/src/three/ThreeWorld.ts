@@ -331,7 +331,7 @@ export class ThreeWorld {
       });
 
       const motionBones: Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }> = [];
-      model.traverse((node) => {
+      model.traverse((node: THREE.Object3D) => {
         if (!(node instanceof THREE.Bone)) return;
         const boneName = node.name.toLowerCase().replace(/[^a-z]/g, '');
         let kind = 'other';

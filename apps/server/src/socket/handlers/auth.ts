@@ -146,9 +146,10 @@ export function handleAuth(
         y: char.pos_y,
       });
 
-      // Send the current region's monsters to the newly authenticated player.
+      // Broadcast the current region's monsters. Existing clients ignore
+      // duplicates by monster id; the joining client receives the full set.
       for (const monster of gameState.getMonstersInRegion(char.region)) {
-        socket.emit('combat:monster_spawn', { monster });
+        io.to(`region:${char.region}`).emit('combat:monster_spawn', { monster });
       }
 
       // Send current inventory

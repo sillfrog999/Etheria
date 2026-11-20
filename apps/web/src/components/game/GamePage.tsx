@@ -169,7 +169,7 @@ export function GamePage() {
 
       socket.disconnect();
     };
-  }, [token, character, setGatheringState]);
+  }, [token, character]);
 
   return (
     <div style={{

@@ -340,10 +340,33 @@ export class ThreeWorld {
         if (node instanceof THREE.Bone) allBones.push(node);
       });
 
-      // Put the upper arms down by aligning each upper-arm bone toward a
-      // downward, slightly outward direction in world space. This avoids
-      // guessing the model's local X/Z rotation axes.
+      // Pose each arm in two segments: upper arm diagonally outward from
+      // the shoulder, then forearm down from the elbow. This keeps the
+      // upper-arm silhouette visible instead of hiding it behind the cloak.
       model.updateMatrixWorld(true);
+      const alignBoneToWorldDirection = (
+        bone: THREE.Bone,
+        childBone: THREE.Bone,
+        targetDirection: THREE.Vector3
+      ) => {
+        if (!bone.parent) return;
+        const origin = bone.getWorldPosition(new THREE.Vector3());
+        const end = childBone.getWorldPosition(new THREE.Vector3());
+        const currentDirection = end.sub(origin);
+        if (currentDirection.lengthSq() < 0.000001) return;
+        const worldDelta = new THREE.Quaternion().setFromUnitVectors(
+          currentDirection.normalize(),
+          targetDirection.clone().normalize()
+        );
+        const parentWorldRotation = bone.parent.getWorldQuaternion(new THREE.Quaternion());
+        const currentWorldRotation = bone.getWorldQuaternion(new THREE.Quaternion());
+        const desiredWorldRotation = worldDelta.multiply(currentWorldRotation);
+        bone.quaternion.copy(
+          parentWorldRotation.invert().multiply(desiredWorldRotation)
+        );
+        model.updateMatrixWorld(true);
+      };
+
       for (const bone of allBones) {
         const name = bone.name.toLowerCase().replace(/[^a-z]/g, '');
         const isUpperArm = name.includes('upperarm') ||
@@ -356,30 +379,34 @@ export class ThreeWorld {
           : name.includes('right') || name.endsWith('r') ? 'right' : 'center';
         if (side === 'center') continue;
 
-        const childBone = bone.children.find((child): child is THREE.Bone => child instanceof THREE.Bone);
-        if (!childBone || !bone.parent) continue;
-
-        const shoulder = bone.getWorldPosition(new THREE.Vector3());
-        const elbow = childBone.getWorldPosition(new THREE.Vector3());
-        const currentDirection = elbow.sub(shoulder);
-        if (currentDirection.lengthSq() < 0.000001) continue;
-
-        // Keep the arms relaxed but visibly separated from the torso.
-        // Keep the upper arms clearly outside the torso/cloak silhouette.
-        // A small forward offset also prevents the forearms from being hidden
-        // when viewed from the game's elevated third-person camera.
-        const outward = side === 'left' ? -0.82 : 0.82;
-        const targetDirection = new THREE.Vector3(outward, -0.57, 0.12).normalize();
-        const worldDelta = new THREE.Quaternion().setFromUnitVectors(
-          currentDirection.normalize(),
-          targetDirection
+        const elbowBone = bone.children.find((child): child is THREE.Bone =>
+          child instanceof THREE.Bone &&
+          /lower|forearm/.test(child.name.toLowerCase().replace(/[^a-z]/g, ''))
         );
-        const parentWorldRotation = bone.parent.getWorldQuaternion(new THREE.Quaternion());
-        const currentWorldRotation = bone.getWorldQuaternion(new THREE.Quaternion());
-        const desiredWorldRotation = worldDelta.multiply(currentWorldRotation);
-        const localRotation = parentWorldRotation.invert().multiply(desiredWorldRotation);
-        bone.quaternion.copy(localRotation);
-        model.updateMatrixWorld(true);
+        if (!elbowBone) continue;
+
+        const outward = side === 'left' ? -1 : 1;
+        // Shoulder -> elbow: clearly away from the torso, slightly down.
+        alignBoneToWorldDirection(
+          bone,
+          elbowBone,
+          new THREE.Vector3(outward * 0.94, -0.28, 0.18)
+        );
+
+        const wristBone = elbowBone.children.find((child): child is THREE.Bone =>
+          child instanceof THREE.Bone &&
+          /hand|wrist/.test(child.name.toLowerCase().replace(/[^a-z]/g, ''))
+        ) ?? elbowBone.children.find((child): child is THREE.Bone =>
+          child instanceof THREE.Bone
+        );
+        if (wristBone) {
+          // Elbow -> wrist: hang down naturally, with a tiny outward angle.
+          alignBoneToWorldDirection(
+            elbowBone,
+            wristBone,
+            new THREE.Vector3(outward * 0.12, -1, 0.08)
+          );
+        }
       }
 
       const motionBones: Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }> = [];

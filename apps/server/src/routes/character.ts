@@ -5,6 +5,8 @@ import type { Env } from '../config/env.js';
 import { getSupabaseAdmin } from '../db/supabase.js';
 import { STARTING_POSITION, STARTING_REGION } from '@etheria/shared';
 
+const VALID_CHARACTER_MODELS = ['elf_female', 'elf_male', 'orc_female', 'orc_male'] as const;
+
 export function createCharacterRouter(gameState: GameStateManager, env: Env): Router {
   const router = Router();
 
@@ -115,12 +117,16 @@ export function createCharacterRouter(gameState: GameStateManager, env: Env): Ro
       gold: toNumber(row.gold, 100),
       position,
       region,
-      appearance: row.appearance || {
+      appearance: {
         bodyType: 1,
         hairStyle: 1,
         hairColor: '#8B4513',
         skinTone: '#FFD39B',
-        faceStyle: 1
+        faceStyle: 1,
+        ...(row.appearance || {}),
+        modelId: VALID_CHARACTER_MODELS.includes(row.appearance?.modelId)
+          ? row.appearance.modelId
+          : 'elf_male'
       },
       createdAt: row.created_at,
       lastLogin: row.last_login || row.created_at
@@ -216,7 +222,12 @@ export function createCharacterRouter(gameState: GameStateManager, env: Env): Ro
           region: STARTING_REGION,
           pos_x: STARTING_POSITION.x,
           pos_y: STARTING_POSITION.y,
-          appearance: appearance || {}
+          appearance: {
+            ...(appearance && typeof appearance === 'object' ? appearance : {}),
+            modelId: VALID_CHARACTER_MODELS.includes(appearance?.modelId)
+              ? appearance.modelId
+              : 'elf_male'
+          }
         })
         .select()
         .single();

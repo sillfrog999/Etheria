@@ -226,7 +226,7 @@ export class GameStateManager {
         monster.targetPlayerId = undefined;
       }
 
-      if (monster.state === 'chase' && monster.targetPlayerId) {
+      if ((monster.state === 'chase' || monster.state === 'attack') && monster.targetPlayerId) {
         const target = this.players.get(monster.targetPlayerId);
 
         if (target) {
@@ -245,6 +245,7 @@ export class GameStateManager {
             }
             this.monsterUpdateHandler?.(monster);
           } else if (dist > 0) {
+            monster.state = 'chase';
             const dx = (target.x - monster.x) / dist;
             const dy = (target.y - monster.y) / dist;
 

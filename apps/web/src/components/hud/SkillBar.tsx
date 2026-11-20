@@ -58,14 +58,14 @@ export function SkillBar() {
   }, [abilityIds, targetId, cooldowns]);
 
   return (
-    <div className="fantasy-panel" style={{
+    <div className="fantasy-panel hud-skillbar" style={{
       position: 'absolute',
       bottom: '16px',
       left: '50%',
       transform: 'translateX(-50%)',
-      padding: '8px 12px',
+      padding: '6px 8px',
       display: 'flex',
-      gap: '6px',
+      gap: '4px',
       pointerEvents: 'auto',
       zIndex: 10,
     }}>

@@ -120,8 +120,7 @@ export class ThreeWorld {
     this.addGroundBase();
     if ((state.currentRegion || 'greenfall') === 'greenfall') this.addGreenfallVillage();
     this.createActor(this.player, 0x8e9c78, 0x252b27);
-    this.player.position.set(this.playerPos.x, (dx || dy || this.destination ? Math.sin(performance.now() * 0.012) * 0.045 : 0), this.playerPos.y);
-    if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);
+    this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
     this.scene.add(this.player);
     this.loadModel(this.player, `${MODEL_ROOT}/characters/player.glb`);
 
@@ -875,7 +874,9 @@ export class ThreeWorld {
       }
     }
 
-    this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
+    const isMoving = Boolean(dx || dy || this.destination);
+    this.player.position.set(this.playerPos.x, isMoving ? Math.sin(performance.now() * 0.012) * 0.045 : 0, this.playerPos.y);
+    if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);
     const desired = new THREE.Vector3(this.playerPos.x + 9, 13, this.playerPos.y + 11);
     this.camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
     this.camera.lookAt(this.playerPos.x, 0, this.playerPos.y);

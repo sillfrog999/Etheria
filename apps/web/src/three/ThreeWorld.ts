@@ -53,7 +53,12 @@ export class ThreeWorld {
     playerSpawn: ({ player }: any) => this.spawnRemotePlayer(player),
     playerMove: ({ playerId, x, y }: any) => {
       const remote = this.remotePlayers.get(playerId);
-      if (remote) remote.userData.destination = new THREE.Vector3(x, 0, y);
+      if (remote) {
+        const dx = x - remote.position.x;
+        const dy = y - remote.position.z;
+        if (Math.hypot(dx, dy) > 0.02) remote.rotation.y = Math.atan2(dx, dy);
+        remote.userData.destination = new THREE.Vector3(x, 0, y);
+      }
     },
     playerDespawn: ({ playerId }: any) => {
       const remote = this.remotePlayers.get(playerId);
@@ -339,6 +344,10 @@ export class ThreeWorld {
         else if (boneName.includes('upleg') || boneName.includes('thigh') || boneName.includes('leg') || boneName.includes('foot')) kind = 'leg';
         else if (boneName.includes('spine') || boneName.includes('chest')) kind = 'torso';
         const side = boneName.includes('left') || boneName.endsWith('l') ? 'left' : boneName.includes('right') || boneName.endsWith('r') ? 'right' : 'center';
+        // Quaternius character exports use a T-pose; lower upper arms into a relaxed standing pose.
+        if (kind === 'arm' && (boneName.includes('upperarm') || boneName.includes('shoulder'))) {
+          node.rotation.z += side === 'left' ? 1.05 : side === 'right' ? -1.05 : 0;
+        }
         if (kind !== 'other') motionBones.push({ bone: node, base: node.rotation.clone(), kind, side });
       });
       model.userData.motionBones = motionBones;
@@ -952,7 +961,10 @@ export class ThreeWorld {
         }
       }
     }
-    if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);
+    // Face the actual movement direction for both keyboard and click-to-move.
+    if (isMoving) {
+      this.player.rotation.y = Math.atan2(this.moveVelocity.x, this.moveVelocity.y);
+    }
     for (const npc of this.npcs.values()) {
       const phase = npc.userData.idlePhase as number;
       const model = npc.children.find((child) => child.name === 'npc-model-root');

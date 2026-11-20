@@ -564,28 +564,67 @@ export class ThreeWorld {
 
   private spawnMonster(monster: any) {
     if (!monster?.id || this.monsters.has(monster.id)) return;
+
     const group = new THREE.Group();
-    const body = new THREE.Mesh(
+    const modelRoot = new THREE.Group();
+    const fallback = new THREE.Mesh(
       new THREE.IcosahedronGeometry(0.58, 1),
-      new THREE.MeshStandardMaterial({ color: 0x65734b, roughness: 0.9, flatShading: true })
+      new THREE.MeshStandardMaterial({
+        color: 0x65734b,
+        roughness: 0.9,
+        flatShading: true
+      })
     );
-    body.position.y = 0.62;
-    body.castShadow = true;
-    group.add(body);
+    fallback.position.y = 0.62;
+    fallback.castShadow = true;
+    modelRoot.add(fallback);
+    group.add(modelRoot);
+
+    // A small floating nameplate makes the new combat entities easy to spot.
+    const labelCanvas = document.createElement('canvas');
+    labelCanvas.width = 512;
+    labelCanvas.height = 96;
+    const context = labelCanvas.getContext('2d');
+    if (context) {
+      context.fillStyle = 'rgba(12, 15, 12, 0.82)';
+      context.beginPath();
+      context.roundRect(8, 8, 496, 80, 16);
+      context.fill();
+      context.font = 'bold 38px Georgia';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillStyle = '#f0dfbd';
+      context.fillText(`${monster.name || 'Monster'} · Lv.${monster.level || 1}`, 256, 49, 470);
+    }
+    const labelTexture = new THREE.CanvasTexture(labelCanvas);
+    labelTexture.colorSpace = THREE.SRGBColorSpace;
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: labelTexture,
+      transparent: true,
+      depthWrite: false
+    }));
+    label.position.y = 2.25;
+    label.scale.set(2.6, 0.49, 1);
+    group.add(label);
+
     group.position.set(monster.x, 0, monster.y);
     group.userData.clickable = { kind: 'monster', id: monster.id } satisfies Clickable;
     this.scene.add(group);
     this.monsters.set(monster.id, group);
+
     const monsterKind = [
+      monster.definitionId,
       monster.type,
       monster.monsterType,
       monster.templateId,
       monster.name,
     ].filter((value) => typeof value === 'string').join(' ').toLowerCase();
-    const modelPath = monsterKind.includes('puglin')
+
+    const modelPath = monsterKind.includes('goblin') || monsterKind.includes('puglin')
       ? `${MODEL_ROOT}/monsters/greenfall/puglin.glb`
       : `${MODEL_ROOT}/monsters/greenfall/creature.glb`;
-    this.loadModel(group, modelPath, 1.45);
+
+    this.loadModel(modelRoot, modelPath, 1.45);
   }
 
   private showDamage(position: any, damage: number, critical: boolean) {

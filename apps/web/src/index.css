@@ -148,7 +148,7 @@ body, html {
   .hud-chat {
     width: min(330px, calc(100vw - 24px)) !important;
     height: 176px !important;
-    bottom: 82px !important;
+    bottom: 132px !important;
   }
   .hud-menu-bar {
     right: 8px !important;

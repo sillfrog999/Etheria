@@ -335,9 +335,51 @@ export class ThreeWorld {
         }
       });
 
-      const motionBones: Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }> = [];
+      const allBones: THREE.Bone[] = [];
       model.traverse((node: THREE.Object3D) => {
-        if (!(node instanceof THREE.Bone)) return;
+        if (node instanceof THREE.Bone) allBones.push(node);
+      });
+
+      // Put the upper arms down by aligning each upper-arm bone toward a
+      // downward, slightly outward direction in world space. This avoids
+      // guessing the model's local X/Z rotation axes.
+      model.updateMatrixWorld(true);
+      for (const bone of allBones) {
+        const name = bone.name.toLowerCase().replace(/[^a-z]/g, '');
+        const isUpperArm = name.includes('upperarm') ||
+          (name.includes('arm') && !name.includes('lower') && !name.includes('forearm') &&
+            bone.children.some((child) => child instanceof THREE.Bone &&
+              /lower|forearm/.test(child.name.toLowerCase().replace(/[^a-z]/g, ''))));
+        if (!isUpperArm) continue;
+
+        const side = name.includes('left') || name.endsWith('l') ? 'left'
+          : name.includes('right') || name.endsWith('r') ? 'right' : 'center';
+        if (side === 'center') continue;
+
+        const childBone = bone.children.find((child): child is THREE.Bone => child instanceof THREE.Bone);
+        if (!childBone || !bone.parent) continue;
+
+        const shoulder = bone.getWorldPosition(new THREE.Vector3());
+        const elbow = childBone.getWorldPosition(new THREE.Vector3());
+        const currentDirection = elbow.sub(shoulder);
+        if (currentDirection.lengthSq() < 0.000001) continue;
+
+        const outward = side === 'left' ? -0.22 : 0.22;
+        const targetDirection = new THREE.Vector3(outward, -1, 0).normalize();
+        const worldDelta = new THREE.Quaternion().setFromUnitVectors(
+          currentDirection.normalize(),
+          targetDirection
+        );
+        const parentWorldRotation = bone.parent.getWorldQuaternion(new THREE.Quaternion());
+        const currentWorldRotation = bone.getWorldQuaternion(new THREE.Quaternion());
+        const desiredWorldRotation = worldDelta.multiply(currentWorldRotation);
+        const localRotation = parentWorldRotation.invert().multiply(desiredWorldRotation);
+        bone.quaternion.copy(localRotation);
+        model.updateMatrixWorld(true);
+      }
+
+      const motionBones: Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }> = [];
+      for (const node of allBones) {
         const boneName = node.name.toLowerCase().replace(/[^a-z]/g, '');
         let kind = 'other';
         if (boneName.includes('arm') || boneName.includes('hand')) kind = 'arm';
@@ -345,7 +387,7 @@ export class ThreeWorld {
         else if (boneName.includes('spine') || boneName.includes('chest')) kind = 'torso';
         const side = boneName.includes('left') || boneName.endsWith('l') ? 'left' : boneName.includes('right') || boneName.endsWith('r') ? 'right' : 'center';
         if (kind !== 'other') motionBones.push({ bone: node, base: node.rotation.clone(), kind, side });
-      });
+      }
       model.userData.motionBones = motionBones;
       // Normalize Quaternius exports to a predictable in-game height and ground level.
       const bounds = new THREE.Box3().setFromObject(model);
@@ -945,7 +987,7 @@ export class ThreeWorld {
       for (const entry of bones) {
         const direction = entry.side === 'left' ? 1 : entry.side === 'right' ? -1 : 0;
         if (entry.kind === 'arm') {
-          const swing = isMoving ? gait * 0.42 * direction : 0;
+          const swing = isMoving ? gait * 0.12 * direction : 0;
           const slash = attacking && entry.side === 'right' ? -0.95 : 0;
           entry.bone.rotation.x = THREE.MathUtils.damp(entry.bone.rotation.x, entry.base.x + swing, 12, delta);
           entry.bone.rotation.z = THREE.MathUtils.damp(entry.bone.rotation.z, entry.base.z + slash, attacking ? 24 : 10, delta);

@@ -421,7 +421,7 @@ export class ThreeWorld {
           : side === 'l' ? 1 : -1;
         const targetModelDir = new THREE.Vector3(
           sideSign * Math.cos(THREE.MathUtils.degToRad(46)),
-          -Math.sin(THREE.MathUtils.degToRad(38)),
+          -Math.sin(THREE.MathUtils.degToRad(43)),
           0
         ).normalize();
 

@@ -21,3 +21,14 @@ The cited pack pages identify the listed packs as CC0. Quaternius also publishes
 - Prefer 1K or smaller texture atlases for common props, and compress large textures before shipping.
 - Add each imported file and its source/license record to this document.
 - Keep model paths stable; the web renderer gracefully falls back to procedural meshes when a file is absent.
+
+## Regional environment imports
+
+The `import-region-assets.yml` workflow downloads the environment packs from
+`sillfrog999/3d-models-for-Etheria`, extracts glTF/GLB models and their referenced
+textures/buffers, and writes `region-models.json`. The Three.js world loads the
+manifest entries for the current region. Combat equipment and explosive/tool
+models are excluded by the importer; only environment assets are considered.
+
+Source pack licensing remains governed by each original pack's own license.
+Verify the license terms for each source before redistributing the extracted files.

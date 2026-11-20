@@ -141,6 +141,7 @@ export class ThreeWorld {
     this.addLighting();
     this.addGroundBase();
     if ((state.currentRegion || 'greenfall') === 'greenfall') this.addGreenfallVillage();
+    this.loadRegionEnvironment();
     this.addRegionPortals();
     this.createActor(this.player, 0x8e9c78, 0x252b27);
     this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
@@ -301,6 +302,60 @@ export class ThreeWorld {
       tag.position.set(0, 3.15, 0); tag.scale.set(2.5, 0.48, 1); portal.add(tag);
       this.scene.add(portal);
     }
+  }
+
+  private loadRegionEnvironment() {
+    const region = useGameStore.getState().currentRegion || 'greenfall';
+    if (region === 'greenfall') return;
+
+    fetch(`${MODEL_ROOT}/region-models.json`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((assets: Array<{ region: string; url: string; name: string; category: string }>) => {
+        if (this.disposed || !Array.isArray(assets)) return;
+        const regionAssets = assets
+          .filter((asset) => asset.region === region)
+          .slice(0, 36);
+        let buildingIndex = 0;
+
+        regionAssets.forEach((asset, index) => {
+          const group = new THREE.Group();
+          const hash = [...asset.name].reduce(
+            (value, char) => (Math.imul(value, 31) + char.charCodeAt(0)) >>> 0,
+            7
+          );
+
+          let x = 5 + ((index * 17 + hash) % 54);
+          let z = 5 + ((index * 29 + (hash >>> 4)) % 54);
+          let targetHeight = 1.6;
+
+          if (asset.category === 'building') {
+            const slot = buildingIndex++;
+            x = 9 + (slot % 3) * 21;
+            z = 9 + Math.floor(slot / 3) * 21;
+            targetHeight = 5;
+          } else if (asset.category === 'vegetation') {
+            targetHeight = 4;
+          } else if (asset.category === 'rock') {
+            targetHeight = 1.5;
+          } else if (asset.category === 'landscape') {
+            x = 32;
+            z = 32;
+            targetHeight = 12;
+          }
+
+          group.position.set(x, 0, z);
+          group.rotation.y = (hash % 360) * Math.PI / 180;
+          group.name = `region-asset-${asset.name}`;
+          this.scene.add(group);
+          this.loadNatureModel(group, asset.url, targetHeight);
+        });
+      })
+      .catch((error) => {
+        console.warn(`[Etheria Region] Cannot load assets for ${region}`, error);
+      });
   }
 
   private showNpcDialogue(id: string) {

@@ -118,7 +118,7 @@ export class ThreeWorld {
 
     this.addLighting();
     this.addGroundBase();
-    this.addGreenfallVillage();
+    if ((state.currentRegion || 'greenfall') === 'greenfall') this.addGreenfallVillage();
     this.createActor(this.player, 0x8e9c78, 0x252b27);
     this.player.position.set(this.playerPos.x, (dx || dy || this.destination ? Math.sin(performance.now() * 0.012) * 0.045 : 0), this.playerPos.y);
     if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);

@@ -420,7 +420,7 @@ export class ThreeWorld {
           ? Math.sign(shoulderModelPos.x)
           : side === 'l' ? 1 : -1;
         const targetModelDir = new THREE.Vector3(
-          sideSign * Math.cos(THREE.MathUtils.degToRad(38)),
+          sideSign * Math.cos(THREE.MathUtils.degToRad(46)),
           -Math.sin(THREE.MathUtils.degToRad(38)),
           0
         ).normalize();

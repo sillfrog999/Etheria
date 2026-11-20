@@ -371,10 +371,13 @@ export function CharacterSelect() {
           className="fantasy-panel"
           style={{
             flex: 1,
+            minHeight: 0,
             padding: '30px',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between'
+            justifyContent: 'flex-start',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain'
           }}
         >
           {isCreating ? (

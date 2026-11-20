@@ -38,12 +38,12 @@ export function ChatBox() {
   );
 
   return (
-    <div className="fantasy-panel" style={{
+    <div className="fantasy-panel hud-chat" style={{
       position: 'absolute',
-      bottom: '16px',
+      bottom: '94px',
       left: '16px',
-      width: '380px',
-      height: '220px',
+      width: 'min(380px, calc(100vw - 32px))',
+      height: '208px',
       display: 'flex',
       flexDirection: 'column',
       padding: '8px',

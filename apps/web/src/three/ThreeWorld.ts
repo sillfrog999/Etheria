@@ -224,25 +224,59 @@ export class ThreeWorld {
         npc_merchant_mira: `${MODEL_ROOT}/npcs/merchant.glb`,
         npc_guard_rowan: `${MODEL_ROOT}/npcs/guard.glb`,
       };
-      this.loadModel(modelRoot, modelByNpc[id], id === 'npc_guard_rowan' ? 2 : 1.85);
+      if (modelByNpc[id]) this.loadModel(modelRoot, modelByNpc[id], id === 'npc_guard_rowan' ? 2 : 1.85);
     };
     makeNpc('npc_elder_aldric', 'Elder Aldric', 15, 10, 0x9b8060);
     makeNpc('npc_merchant_mira', 'Merchant Mira', 24, 18, 0x8a6b83);
     makeNpc('npc_guard_rowan', 'Guard Rowan', 13, 25, 0x657d72);
+    makeNpc('npc_blacksmith_bram', 'Blacksmith Bram', 19, 7, 0x72594b);
+    makeNpc('npc_trainer_elowen', 'Trainer Elowen', 7, 17, 0x637c9b);
+    makeNpc('npc_innkeeper_tomas', 'Innkeeper Tomas', 28, 14, 0x9b7650);
+    makeNpc('npc_alchemist_syl', 'Alchemist Syl', 20, 27, 0x718b70);
+    makeNpc('npc_quartermaster_ren', 'Quartermaster Ren', 5, 26, 0x7d718f);
+    makeNpc('npc_scout_lyra', 'Scout Lyra', 30, 24, 0x788b68);
   }
 
   private showNpcDialogue(id: string) {
     const lines: Record<string, string> = {
-      npc_elder_aldric: 'Welcome to Greenfall, traveler. The forest has grown restless. Keep your weapon ready.',
-      npc_merchant_mira: 'I trade in useful supplies. More goods will arrive as the village grows.',
-      npc_guard_rowan: 'Wolves and goblins roam beyond the village. Stay close to the roads.',
+      npc_elder_aldric: 'Welcome to Greenfall, traveler. The forest has grown restless. I can tell you about the regions and local threats.',
+      npc_merchant_mira: 'Welcome! Browse the village market for supplies and useful goods.',
+      npc_guard_rowan: 'Wolves and Puglins roam beyond the village. Stay close to the roads.',
+      npc_blacksmith_bram: 'I maintain the village stock of equipment. Visit the market to browse available gear.',
+      npc_trainer_elowen: 'Training makes the difference between a novice and an adventurer. Review your abilities here.',
+      npc_innkeeper_tomas: 'Rest your feet, traveler. Greenfall is safer inside the village walls.',
+      npc_alchemist_syl: 'Potions and reagents are my trade. Check the market for available supplies.',
+      npc_quartermaster_ren: 'Keep your pack in order. Open your inventory and check what you are carrying.',
+      npc_scout_lyra: 'I map the trails around Greenfall. The forest paths grow more dangerous farther from town.',
     };
-    const message = lines[id] ?? 'The villager nods to you.';
-    useGameStore.getState().addChatMessage({
+    const names: Record<string, string> = {
+      npc_elder_aldric: 'Elder Aldric',
+      npc_merchant_mira: 'Merchant Mira',
+      npc_guard_rowan: 'Guard Rowan',
+      npc_blacksmith_bram: 'Blacksmith Bram',
+      npc_trainer_elowen: 'Trainer Elowen',
+      npc_innkeeper_tomas: 'Innkeeper Tomas',
+      npc_alchemist_syl: 'Alchemist Syl',
+      npc_quartermaster_ren: 'Quartermaster Ren',
+      npc_scout_lyra: 'Scout Lyra',
+    };
+    const services: Record<string, 'marketplace' | 'skills' | 'inventory'> = {
+      npc_merchant_mira: 'marketplace',
+      npc_blacksmith_bram: 'marketplace',
+      npc_alchemist_syl: 'marketplace',
+      npc_trainer_elowen: 'skills',
+      npc_quartermaster_ren: 'inventory',
+    };
+    const state = useGameStore.getState();
+    const service = services[id];
+    if (service) {
+      if (!state.windows[service]) state.toggleWindow(service);
+    }
+    state.addChatMessage({
       id: `npc-${id}-${Date.now()}`,
       senderId: id,
-      senderName: id === 'npc_elder_aldric' ? 'Elder Aldric' : id === 'npc_merchant_mira' ? 'Merchant Mira' : 'Guard Rowan',
-      content: message,
+      senderName: names[id] ?? 'Villager',
+      content: lines[id] ?? 'The villager nods to you.',
       channel: 'system',
       timestamp: Date.now(),
     } as any);

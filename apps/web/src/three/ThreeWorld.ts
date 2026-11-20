@@ -96,14 +96,6 @@ export class ThreeWorld {
       }
     },
     statsUpdate: (stats: any) => useGameStore.getState().updateStats(stats),
-    gatherStart: ({ nodeId, duration }: any) => {
-      const resource = this.resourceNameFromNode(nodeId);
-      this.addSystemMessage(`Đang thu thập ${resource}... (${Math.ceil((duration || 0) / 1000)} giây)`);
-    },
-    gatherComplete: ({ item, xp, skill }: any) => {
-      this.addSystemMessage(`Đã thu thập ${item?.quantity ?? 1} ${item?.name ?? 'tài nguyên'} · +${xp ?? 0} XP ${skill ?? ''}`.trim());
-    },
-    gatherFail: ({ reason }: any) => this.addSystemMessage(`Thu thập thất bại: ${reason ?? 'Không thể thu thập tài nguyên.'}`),
     abilityUsed: ({ casterId, abilityId, targetId, targetX, targetY }: any) => {
       const caster = casterId === useGameStore.getState().character?.id
         ? this.player
@@ -160,9 +152,6 @@ export class ThreeWorld {
     this.socket.on('combat:damage', this.handlers.damage);
     this.socket.on('combat:ability_used', this.handlers.abilityUsed);
     this.socket.on('player:stats_update', this.handlers.statsUpdate);
-    this.socket.on('gather:start', this.handlers.gatherStart);
-    this.socket.on('gather:complete', this.handlers.gatherComplete);
-    this.socket.on('gather:fail', this.handlers.gatherFail);
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);

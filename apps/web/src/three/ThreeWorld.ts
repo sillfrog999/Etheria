@@ -23,6 +23,8 @@ export class ThreeWorld {
   private container: HTMLElement;
   private player = new THREE.Group();
   private playerPos: Point;
+  private moveVelocity = new THREE.Vector2();
+  private attackAnimUntil = 0;
   private destination: Point | null = null;
   private keys = new Set<string>();
   private raycaster = new THREE.Raycaster();
@@ -237,11 +239,10 @@ export class ThreeWorld {
       tag.position.y = 2.15; tag.scale.set(2.2, 0.42, 1); npc.add(tag);
       this.scene.add(npc);
       this.npcs.set(id, npc);
-      const raceRoot = `${MODEL_ROOT}/imports/asset2/Characters - Fantasy Races Kit[Standard]/Exports/GLB (Godot-Unreal)`;
       const modelByNpc: Record<string, string> = {
-        npc_elder_aldric: `${raceRoot}/Elf_Male.glb`,
-        npc_merchant_mira: `${raceRoot}/Elf_Female.glb`,
-        npc_guard_rowan: `${raceRoot}/Orc_Male.glb`,
+        npc_elder_aldric: `${MODEL_ROOT}/npcs/elder.glb`,
+        npc_merchant_mira: `${MODEL_ROOT}/npcs/merchant.glb`,
+        npc_guard_rowan: `${MODEL_ROOT}/npcs/guard.glb`,
       };
       this.loadModel(modelRoot, modelByNpc[id], id === 'npc_guard_rowan' ? 2 : 1.85);
     };
@@ -793,7 +794,8 @@ export class ThreeWorld {
 
   private showSkillEffect(position: any, abilityId: string) {
     const key = abilityId.toLowerCase();
-    const color = key.includes('fire') ? 0xff793d
+    const color = key.includes('slash') ? 0xf5d6a2
+      : key.includes('fire') ? 0xff793d
       : key.includes('ice') || key.includes('frost') ? 0x82dfff
       : key.includes('heal') || key.includes('light') ? 0x8ee6a5
       : key.includes('shadow') || key.includes('void') ? 0x9b79e8
@@ -876,6 +878,9 @@ export class ThreeWorld {
         this.showNpcDialogue(clickable.id);
       } else {
         useGameStore.getState().setTarget(clickable.id, 'monster');
+        const target = this.monsters.get(clickable.id);
+        if (target) this.showSkillEffect(target.position, 'physical_slash');
+        this.attackAnimUntil = performance.now() + 320;
         this.socket.emit('combat:attack', { targetId: clickable.id });
       }
       return;
@@ -906,24 +911,29 @@ export class ThreeWorld {
     if (this.keys.has('a') || this.keys.has('arrowleft')) dx -= 1;
     if (this.keys.has('d') || this.keys.has('arrowright')) dx += 1;
 
+    let targetVX = 0;
+    let targetVY = 0;
     if (dx || dy) {
       const length = Math.hypot(dx, dy) || 1;
-      this.playerPos.x += (dx / length) * 3.5 * delta;
-      this.playerPos.y += (dy / length) * 3.5 * delta;
+      targetVX = (dx / length) * 3.5;
+      targetVY = (dy / length) * 3.5;
       this.destination = null;
     } else if (this.destination) {
       const vx = this.destination.x - this.playerPos.x;
       const vy = this.destination.y - this.playerPos.y;
       const distance = Math.hypot(vx, vy);
-      if (distance < 0.12) this.destination = null;
+      if (distance < 0.1) this.destination = null;
       else {
-        const step = Math.min(distance, 3.5 * delta);
-        this.playerPos.x += (vx / distance) * step;
-        this.playerPos.y += (vy / distance) * step;
+        targetVX = (vx / distance) * Math.min(3.5, distance * 7);
+        targetVY = (vy / distance) * Math.min(3.5, distance * 7);
       }
     }
 
-    const isMoving = Boolean(dx || dy || this.destination);
+    this.moveVelocity.x = THREE.MathUtils.damp(this.moveVelocity.x, targetVX, 14, delta);
+    this.moveVelocity.y = THREE.MathUtils.damp(this.moveVelocity.y, targetVY, 14, delta);
+    this.playerPos.x += this.moveVelocity.x * delta;
+    this.playerPos.y += this.moveVelocity.y * delta;
+    const isMoving = this.moveVelocity.lengthSq() > 0.015;
     const elapsed = performance.now() * 0.001;
     this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
     const playerModel = this.player.children.find((child) => child.name === 'loaded-model');
@@ -931,7 +941,9 @@ export class ThreeWorld {
       const gait = isMoving ? Math.sin(elapsed * 11) : 0;
       playerModel.position.y = isMoving ? Math.abs(gait) * 0.055 : 0;
       playerModel.rotation.z = THREE.MathUtils.damp(playerModel.rotation.z, isMoving ? Math.sin(elapsed * 5.5) * 0.035 : 0, 9, delta);
-      playerModel.rotation.x = THREE.MathUtils.damp(playerModel.rotation.x, isMoving ? 0.035 : 0, 8, delta);
+      const attacking = performance.now() < this.attackAnimUntil;
+      playerModel.rotation.x = THREE.MathUtils.damp(playerModel.rotation.x, attacking ? -0.22 : isMoving ? 0.035 : 0, attacking ? 22 : 8, delta);
+      playerModel.rotation.y = THREE.MathUtils.damp(playerModel.rotation.y, attacking ? 0.16 : 0, 18, delta);
     }
     if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);
     for (const npc of this.npcs.values()) {
@@ -961,7 +973,7 @@ export class ThreeWorld {
         this.socket.emit('player:move', {
           x: this.playerPos.x,
           y: this.playerPos.y,
-          facing: dx > 0 ? 'east' : dx < 0 ? 'west' : dy > 0 ? 'south' : 'north',
+          facing: Math.abs(this.moveVelocity.x) > Math.abs(this.moveVelocity.y) ? (this.moveVelocity.x > 0 ? 'east' : 'west') : (this.moveVelocity.y > 0 ? 'south' : 'north'),
         });
       }
     }

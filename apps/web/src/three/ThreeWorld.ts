@@ -17,6 +17,8 @@ export class ThreeWorld {
   private renderer: any;
   private clock = new THREE.Clock();
   private loader = new GLTFLoader();
+  private natureModelCache = new Map<string, Promise<THREE.Group>>();
+  private natureRoot = `${MODEL_ROOT}/imports/asset3/glTF`;
   private socket: EtheriaSocket;
   private container: HTMLElement;
   private player = new THREE.Group();
@@ -217,6 +219,68 @@ export class ThreeWorld {
     });
   }
 
+  private getNatureModel(path: string): Promise<THREE.Group> {
+    let cached = this.natureModelCache.get(path);
+
+    if (!cached) {
+      cached = this.loader.loadAsync(path).then((gltf) => {
+        const model = gltf.scene;
+        model.traverse((node) => {
+          if (node instanceof THREE.Mesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+        return model;
+      }).catch((error) => {
+        this.natureModelCache.delete(path);
+        throw error;
+      });
+
+      this.natureModelCache.set(path, cached);
+    }
+
+    return cached;
+  }
+
+  private loadNatureModel(
+    target: THREE.Group,
+    path: string,
+    targetHeight: number
+  ) {
+    this.getNatureModel(path).then((template) => {
+      if (this.disposed) return;
+
+      const model = template.clone(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      const size = bounds.getSize(new THREE.Vector3());
+
+      if (size.y > 0) {
+        model.scale.setScalar(targetHeight / size.y);
+      }
+
+      model.position.set(
+        -bounds.getCenter(new THREE.Vector3()).x * model.scale.x,
+        -bounds.min.y * model.scale.y,
+        -bounds.getCenter(new THREE.Vector3()).z * model.scale.z
+      );
+
+      // Dispose only the temporary fallback meshes; GLTF cache resources are shared.
+      target.traverse((node) => {
+        if (node instanceof THREE.Mesh) {
+          node.geometry.dispose();
+          const materials = Array.isArray(node.material) ? node.material : [node.material];
+          materials.forEach((material) => material.dispose());
+        }
+      });
+
+      target.clear();
+      target.add(model);
+    }).catch((error) => {
+      console.warn(`[Etheria Nature] Cannot load ${path}`, error);
+    });
+  }
+
   private tileColor(type: string) {
     const colors: Record<string, number> = {
       grass: 0x496b43, forest_grass: 0x344f35, dirt: 0x66513b,
@@ -271,7 +335,7 @@ export class ThreeWorld {
     this.scene.add(terrain);
 
     for (const object of chunk.objects ?? []) {
-      const prop = this.createProp(String(object.type));
+      const prop = this.createProp(String(object.type), object.id);
       prop.position.set(object.x, (object.z || 0) * 0.12, object.y);
       this.scene.add(prop);
     }
@@ -286,32 +350,77 @@ export class ThreeWorld {
     }
   }
 
-  private createProp(type: string) {
+  private createProp(type: string, seed = '') {
     const group = new THREE.Group();
-    if (type.includes('tree') || type.includes('forest')) {
+    const normalizedType = type.toLowerCase();
+    const hash = [...seed].reduce(
+      (value, char) => (Math.imul(value, 31) + char.charCodeAt(0)) >>> 0,
+      7
+    );
+
+    if (normalizedType === 'tree' || normalizedType === 'forest') {
+      const fallback = new THREE.Group();
+
       const trunk = new THREE.Mesh(
         new THREE.CylinderGeometry(0.12, 0.2, 1.6, 6),
         new THREE.MeshStandardMaterial({ color: 0x55402e })
       );
       trunk.position.y = 0.8;
+
       const canopy = new THREE.Mesh(
         new THREE.IcosahedronGeometry(1.05, 1),
-        new THREE.MeshStandardMaterial({ color: 0x355b3d, roughness: 0.95, flatShading: true })
+        new THREE.MeshStandardMaterial({
+          color: 0x355b3d,
+          roughness: 0.95,
+          flatShading: true
+        })
       );
       canopy.position.y = 2;
       canopy.scale.set(1, 1.1, 0.9);
       canopy.castShadow = true;
-      group.add(trunk, canopy);
-      this.loadModel(group, `${MODEL_ROOT}/environment/tree.glb`);
-    } else {
-      const rock = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(0.55, 0),
-        new THREE.MeshStandardMaterial({ color: 0x62665b, roughness: 1, flatShading: true })
+      fallback.add(trunk, canopy);
+      group.add(fallback);
+
+      const index = hash % 5 + 1;
+      this.loadNatureModel(
+        group,
+        `${this.natureRoot}/CommonTree_${index}.gltf`,
+        4
       );
-      rock.position.y = 0.38;
-      rock.castShadow = true;
-      group.add(rock);
+    } else if (normalizedType.includes('flower')) {
+      const flowers = ['Flower_3_Group.gltf', 'Flower_4_Group.gltf'];
+      const file = flowers[hash % flowers.length]!;
+
+      const fallback = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0xc68b9b })
+      );
+      fallback.position.y = 0.2;
+      group.add(fallback);
+
+      this.loadNatureModel(group, `${this.natureRoot}/${file}`, 0.8);
+    } else {
+      const fallback = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.55, 0),
+        new THREE.MeshStandardMaterial({
+          color: 0x62665b,
+          roughness: 1,
+          flatShading: true
+        })
+      );
+      fallback.position.y = 0.38;
+      fallback.castShadow = true;
+      group.add(fallback);
+
+      const index = hash % 3 + 1;
+      this.loadNatureModel(
+        group,
+        `${this.natureRoot}/Rock_Medium_${index}.gltf`,
+        0.9
+      );
     }
+
+    group.rotation.y = (hash % 360) * Math.PI / 180;
     return group;
   }
 

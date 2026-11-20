@@ -61,19 +61,19 @@ export function GamePage() {
     const onGatherStart = ({ nodeId, duration }: any) => {
       const resourceId = String(nodeId ?? '').split('_').slice(3).join('_');
       const resourceNames: Record<string, string> = {
-        wood: 'Gỗ', ancient_wood: 'Gỗ cổ đại', copper_ore: 'Quặng đồng',
-        tin_ore: 'Quặng thiếc', iron_ore: 'Quặng sắt', coal: 'Than',
-        silver_ore: 'Quặng bạc', gold_ore: 'Quặng vàng', mithril_ore: 'Mithril',
-        crystal_shards: 'Mảnh tinh thể', herbs: 'Thảo mộc', rare_herbs: 'Thảo mộc hiếm',
-        fiber: 'Sợi', fish: 'Cá', hide: 'Da thú',
+        wood: 'Wood', ancient_wood: 'Ancient Wood', copper_ore: 'Copper Ore',
+        tin_ore: 'Tin Ore', iron_ore: 'Iron Ore', coal: 'Coal',
+        silver_ore: 'Silver Ore', gold_ore: 'Gold Ore', mithril_ore: 'Mithril',
+        crystal_shards: 'Crystal Shards', herbs: 'Herbs', rare_herbs: 'Rare Herbs',
+        fiber: 'Fiber', fish: 'Fish', hide: 'Hide',
       };
-      const resource = resourceNames[resourceId] ?? (resourceId.replace(/_/g, ' ') || 'tài nguyên');
+      const resource = resourceNames[resourceId] ?? (resourceId.replace(/_/g, ' ') || 'resource');
       useGameStore.getState().addChatMessage({
         id: `gather-start-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         senderId: 'system',
-        senderName: 'Hệ thống',
+        senderName: 'System',
         channel: 'system',
-        content: `Bắt đầu thu thập ${resource} · ${Math.ceil((duration || 0) / 1000)} giây`,
+        content: `Gathering started: ${resource} · ${Math.ceil((duration || 0) / 1000)} sec`,
         timestamp: Date.now(),
       } as any);
     };
@@ -84,7 +84,7 @@ export function GamePage() {
         senderId: 'system',
         senderName: 'Hệ thống',
         channel: 'system',
-        content: `Đã thu thập ${item?.quantity ?? 1}x ${item?.name ?? 'tài nguyên'} (+${xp ?? 0} ${skill ?? ''} XP)`,
+        content: `Collected ${item?.quantity ?? 1}x ${item?.name ?? 'resource'} (+${xp ?? 0} ${skill ?? ''} XP)`,
         timestamp: Date.now()
       } as any);
     };
@@ -95,7 +95,7 @@ export function GamePage() {
         senderId: 'system',
         senderName: 'Hệ thống',
         channel: 'system',
-        content: `Thu thập thất bại: ${reason ?? 'Không thể thu thập tài nguyên.'}`,
+        content: `Gathering failed: ${reason ?? 'Unable to gather this resource.'}`,
         timestamp: Date.now()
       } as any);
     };

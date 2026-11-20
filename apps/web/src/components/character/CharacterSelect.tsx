@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useGameStore } from '../../store/gameStore';
-import type { Character, CharacterClass } from '@etheria/shared';
+import type { Character, CharacterClass, CharacterModelId } from '@etheria/shared';
+import { CharacterModelPreview } from './CharacterModelPreview';
 
 const CLASSES: Array<{
   id: CharacterClass;
@@ -41,6 +42,14 @@ const CLASSES: Array<{
   }
 ];
 
+
+const CHARACTER_MODELS: Array<{ id: CharacterModelId; name: string; race: string }> = [
+  { id: 'elf_female', name: 'Elf Female', race: 'Elf' },
+  { id: 'elf_male', name: 'Elf Male', race: 'Elf' },
+  { id: 'orc_female', name: 'Orc Female', race: 'Orc' },
+  { id: 'orc_male', name: 'Orc Male', race: 'Orc' }
+];
+
 export function CharacterSelect() {
   const { setCharacter } = useGameStore();
 
@@ -52,6 +61,7 @@ export function CharacterSelect() {
   // Creation form
   const [name, setName] = useState('');
   const [charClass, setCharClass] = useState<CharacterClass>('fighter');
+  const [modelId, setModelId] = useState<CharacterModelId>('elf_male');
   const [createError, setCreateError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -128,6 +138,7 @@ export function CharacterSelect() {
           name: name.trim(),
           characterClass: charClass,
           appearance: {
+            modelId,
             bodyType: 1,
             hairStyle: 1,
             hairColor: '#8B4513',
@@ -515,6 +526,71 @@ export function CharacterSelect() {
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '24px',
+                    flexWrap: 'wrap',
+                    padding: '16px',
+                    background: 'rgba(0, 0, 0, .28)',
+                    border: '1px solid #332816',
+                    borderRadius: '5px'
+                  }}
+                >
+                  <div style={{ minWidth: '260px', flex: 1 }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontSize: '12px',
+                        color: 'var(--color-gold)',
+                        marginBottom: '10px'
+                      }}
+                    >
+                      CHOOSE CHARACTER APPEARANCE
+                    </label>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, minmax(120px, 1fr))',
+                        gap: '10px'
+                      }}
+                    >
+                      {CHARACTER_MODELS.map((model) => {
+                        const active = modelId === model.id;
+                        return (
+                          <button
+                            key={model.id}
+                            type="button"
+                            onClick={() => setModelId(model.id)}
+                            style={{
+                              padding: '12px',
+                              textAlign: 'left',
+                              color: active ? '#f6dfad' : '#aaa',
+                              background: active ? 'rgba(212, 175, 55, .16)' : 'rgba(0, 0, 0, .42)',
+                              border: `1px solid ${active ? 'var(--color-gold)' : '#3a3020'}`,
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <strong style={{ display: 'block', fontSize: '13px' }}>{model.name}</strong>
+                            <span style={{ fontSize: '11px', color: '#888' }}>{model.race} · 3D model</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p style={{ color: '#777', fontSize: '11px', marginTop: '12px' }}>
+                      This appearance is saved with your character and shown to other players.
+                    </p>
+                  </div>
+                  <div style={{ width: '280px', maxWidth: '100%' }}>
+                    <CharacterModelPreview modelId={modelId} />
+                    <div style={{ textAlign: 'center', color: 'var(--color-gold)', fontSize: '12px', marginTop: '6px' }}>
+                      {CHARACTER_MODELS.find((model) => model.id === modelId)?.name}
+                    </div>
                   </div>
                 </div>
 

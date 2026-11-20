@@ -381,16 +381,9 @@ export class ThreeWorld {
         else if (boneName.includes('spine') || boneName.includes('chest')) kind = 'torso';
         const side = boneName.includes('left') || boneName.endsWith('l') ? 'left' : boneName.includes('right') || boneName.endsWith('r') ? 'right' : 'center';
 
-        // Convert a straight T-pose into a relaxed A-pose. For common
-        // Mixamo/Quaternius rigs, the upper arms rotate inward/down around
-        // their local Z axis; opposite signs keep both sides symmetrical.
-        const isUpperArm = kind === 'arm' &&
-          !boneName.includes('lower') &&
-          !boneName.includes('forearm') &&
-          !boneName.includes('hand');
-        if (isUpperArm && side === 'left') node.rotation.z += 0.58;
-        else if (isUpperArm && side === 'right') node.rotation.z -= 0.58;
-
+        // Keep the GLB-authored bind/rest pose. Do not guess local arm axes:
+        // a fixed +/- Z rotation can lift the arms on rigs with different bone
+        // orientations. Animation offsets below are applied relative to this pose.
         if (kind !== 'other') motionBones.push({ bone: node, base: node.rotation.clone(), kind, side });
       }
       model.userData.motionBones = motionBones;

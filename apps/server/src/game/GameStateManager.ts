@@ -26,6 +26,7 @@ export class GameStateManager {
   private activeTrades = new Map<string, unknown>();
   private persistQueue = new Set<string>();
   private env?: Env;
+  private monsterUpdateHandler?: (monster: Monster) => void;
 
   private readonly TICK_MS = 50;
   private readonly PERSIST_INTERVAL_MS = 30000;
@@ -39,6 +40,10 @@ export class GameStateManager {
 
   setEnv(env: Env) {
     this.env = env;
+  }
+
+  setMonsterUpdateHandler(handler: (monster: Monster) => void) {
+    this.monsterUpdateHandler = handler;
   }
 
   addPlayer(player: ServerPlayer) {
@@ -233,6 +238,7 @@ export class GameStateManager {
 
             monster.x += dx * definition.moveSpeed * (this.TICK_MS / 1000);
             monster.y += dy * definition.moveSpeed * (this.TICK_MS / 1000);
+            this.monsterUpdateHandler?.(monster);
           }
         } else {
           monster.state = 'idle';

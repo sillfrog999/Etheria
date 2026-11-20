@@ -67,7 +67,7 @@ export function GamePage() {
         crystal_shards: 'Mảnh tinh thể', herbs: 'Thảo mộc', rare_herbs: 'Thảo mộc hiếm',
         fiber: 'Sợi', fish: 'Cá', hide: 'Da thú',
       };
-      const resource = resourceNames[resourceId] ?? resourceId.replace(/_/g, ' ') || 'tài nguyên';
+      const resource = resourceNames[resourceId] ?? (resourceId.replace(/_/g, ' ') || 'tài nguyên');
       useGameStore.getState().addChatMessage({
         id: `gather-start-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         senderId: 'system',

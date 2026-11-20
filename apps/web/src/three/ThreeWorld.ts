@@ -344,10 +344,6 @@ export class ThreeWorld {
         else if (boneName.includes('upleg') || boneName.includes('thigh') || boneName.includes('leg') || boneName.includes('foot')) kind = 'leg';
         else if (boneName.includes('spine') || boneName.includes('chest')) kind = 'torso';
         const side = boneName.includes('left') || boneName.endsWith('l') ? 'left' : boneName.includes('right') || boneName.endsWith('r') ? 'right' : 'center';
-        // Quaternius character exports use a T-pose; lower upper arms into a relaxed standing pose.
-        if (kind === 'arm' && (boneName.includes('upperarm') || boneName.includes('shoulder'))) {
-          node.rotation.z += side === 'left' ? 1.05 : side === 'right' ? -1.05 : 0;
-        }
         if (kind !== 'other') motionBones.push({ bone: node, base: node.rotation.clone(), kind, side });
       });
       model.userData.motionBones = motionBones;

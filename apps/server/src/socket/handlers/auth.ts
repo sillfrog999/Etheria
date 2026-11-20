@@ -128,6 +128,12 @@ export function handleAuth(
 
       gameState.addPlayer(player);
 
+      // Greenfall needs real server-side monster instances; world chunks only
+      // contain terrain and decorative objects, not combat entities.
+      if (char.region === 'greenfall') {
+        gameState.ensureGreenfallMonsters(char.pos_x, char.pos_y);
+      }
+
       // Join region room
       socket.join(`region:${char.region}`);
 
@@ -139,6 +145,11 @@ export function handleAuth(
         x: char.pos_x,
         y: char.pos_y,
       });
+
+      // Send the current region's monsters to the newly authenticated player.
+      for (const monster of gameState.getMonstersInRegion(char.region)) {
+        socket.emit('combat:monster_spawn', { monster });
+      }
 
       // Send current inventory
       socket.emit('player:inventory_update', { slots: inventory as never });

@@ -5,30 +5,31 @@ import { ABILITY_DATABASE, DEFAULT_HOTBAR } from '@etheria/game-data';
 
 const HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
 
-const ABILITY_ICONS: Record<string, string> = {
-  basic_attack: 'basic_attack',
-  arcane_bolt: 'arcane_bolt',
-  fireball: 'fireball',
-  ice_nova: 'ice_nova',
-  arcane_shield: 'arcane_shield',
-  healing_wave: 'healing_wave',
-  meteor: 'meteor',
-  heavy_strike: 'heavy_strike',
-  shield_bash: 'shield_bash',
-  charge: 'charge',
-  counterattack: 'counterattack',
-  whirlwind: 'whirlwind',
-  shadow_step: 'shadow_step',
-  smoke_veil: 'smoke_veil',
-  ambush: 'ambush',
-  backstab: 'backstab',
-  evasive_roll: 'evasive_roll',
-  quick_shot: 'quick_shot',
-  piercing_shot: 'piercing_shot',
-  explosive_arrow: 'explosive_arrow',
-  tactical_roll: 'tactical_roll',
-  reload: 'reload',
-  blink: 'blink',
+// Tile coordinates in the 6-column x 4-row image generated for ETHERIA.
+const ABILITY_ICONS: Record<string, number> = {
+  basic_attack: 0,
+  arcane_bolt: 1,
+  fireball: 2,
+  ice_nova: 3,
+  arcane_shield: 4,
+  healing_wave: 5,
+  meteor: 6,
+  heavy_strike: 7,
+  shield_bash: 8,
+  charge: 9,
+  whirlwind: 10,
+  shadow_step: 12,
+  smoke_veil: 13,
+  backstab: 14,
+  ambush: 15,
+  evasive_roll: 16,
+  piercing_shot: 17,
+  quick_shot: 20,
+  reload: 21,
+  blink: 22,
+  counterattack: 23,
+  explosive_arrow: 19,
+  tactical_roll: 16,
 };
 
 export function SkillBar() {
@@ -43,9 +44,7 @@ export function SkillBar() {
     const ability = ABILITY_DATABASE[abilityId];
     if (!ability) return;
 
-    if (cooldowns[abilityId] && Date.now() < cooldowns[abilityId]) {
-      return;
-    }
+    if (cooldowns[abilityId] && Date.now() < cooldowns[abilityId]) return;
 
     const socket = getSocket();
     if (ability.targetType === 'enemy') {
@@ -69,12 +68,9 @@ export function SkillBar() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
-
       const key = e.key.toUpperCase();
       const idx = HOTKEYS.indexOf(key);
-      if (idx !== -1 && abilityIds[idx]) {
-        triggerAbility(abilityIds[idx]);
-      }
+      if (idx !== -1 && abilityIds[idx]) triggerAbility(abilityIds[idx]);
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -98,7 +94,9 @@ export function SkillBar() {
         const ability = abilityId ? ABILITY_DATABASE[abilityId] : null;
         const cdExpires = abilityId ? cooldowns[abilityId] : 0;
         const onCd = cdExpires && Date.now() < cdExpires;
-        const iconId = abilityId ? ABILITY_ICONS[abilityId] : null;
+        const tile = abilityId ? ABILITY_ICONS[abilityId] : undefined;
+        const col = tile === undefined ? 0 : tile % 6;
+        const row = tile === undefined ? 0 : Math.floor(tile / 6);
 
         return (
           <div
@@ -109,40 +107,30 @@ export function SkillBar() {
               position: 'relative',
               overflow: 'hidden',
               borderColor: ability ? 'var(--color-gold-dark)' : '#222',
-              background: ability ? '#090b12' : 'rgba(0,0,0,0.7)',
+              backgroundColor: ability ? '#090b12' : 'rgba(0,0,0,0.7)',
+              backgroundImage: ability && tile !== undefined
+                ? "url('/assets/abilities/generated-skill-sprite.webp')"
+                : 'none',
+              backgroundSize: '600% 400%',
+              backgroundPosition: `${(col / 5) * 100}% ${(row / 3) * 100}%`,
+              backgroundRepeat: 'no-repeat',
             }}
             title={ability ? `${ability.name} (${ability.description})` : 'Empty Slot'}
           >
-            {ability && iconId && (
-              <svg
-                viewBox="0 0 64 64"
-                aria-label={ability.name}
-                role="img"
-                style={{
-                  position: 'absolute',
-                  inset: '0',
-                  width: '100%',
-                  height: '100%',
-                  display: 'block',
-                  pointerEvents: 'none',
-                }}
-              >
-                <use href={`/assets/abilities/ability-icons.svg#${iconId}`} />
-              </svg>
+            {ability && (
+              <span style={{
+                position: 'absolute',
+                top: '2px',
+                left: '4px',
+                zIndex: 2,
+                fontSize: '10px',
+                color: '#ffe2a0',
+                fontWeight: 'bold',
+                textShadow: '0 1px 3px #000',
+              }}>
+                {key}
+              </span>
             )}
-
-            <span style={{
-              position: 'absolute',
-              top: '2px',
-              left: '4px',
-              zIndex: 2,
-              fontSize: '10px',
-              color: '#ffe2a0',
-              fontWeight: 'bold',
-              textShadow: '0 1px 3px #000',
-            }}>
-              {key}
-            </span>
 
             {ability && ability.manaCost > 0 && (
               <span style={{

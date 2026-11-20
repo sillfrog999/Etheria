@@ -141,6 +141,7 @@ export class ThreeWorld {
     this.addLighting();
     this.addGroundBase();
     if ((state.currentRegion || 'greenfall') === 'greenfall') this.addGreenfallVillage();
+    this.addRegionPortals();
     this.createActor(this.player, 0x8e9c78, 0x252b27);
     this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
     this.scene.add(this.player);
@@ -241,7 +242,6 @@ export class ThreeWorld {
     makeNpc('npc_alchemist_syl', 'Alchemist Syl', 20, 27, 0x718b70);
     makeNpc('npc_quartermaster_ren', 'Quartermaster Ren', 5, 26, 0x7d718f);
     makeNpc('npc_scout_lyra', 'Scout Lyra', 30, 24, 0x788b68);
-    this.addRegionPortals();
   }
 
 
@@ -252,7 +252,9 @@ export class ThreeWorld {
   }
 
   private addRegionPortals() {
+    const currentRegion = useGameStore.getState().currentRegion || 'greenfall';
     const destinations = [
+      { id: 'greenfall', name: 'Greenfall', x: 5, z: 6, color: 0x75c878 },
       { id: 'aurelia', name: 'Aurelia', x: 36, z: 8, color: 0xe5bd62 },
       { id: 'silverwood', name: 'Silverwood', x: 40, z: 20, color: 0x65c98b },
       { id: 'ashen_mountains', name: 'Ashen Mountains', x: 36, z: 32, color: 0xb5a18a },
@@ -261,6 +263,7 @@ export class ThreeWorld {
       { id: 'the_void', name: 'The Void', x: 30, z: 40, color: 0xb18aff },
     ];
     for (const destination of destinations) {
+      if (destination.id === currentRegion) continue;
       const portal = new THREE.Group();
       const glow = new THREE.Mesh(
         new THREE.TorusGeometry(0.95, 0.13, 12, 36),

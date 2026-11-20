@@ -2,6 +2,7 @@
 import type { GameServer, GameSocket } from '../index.js';
 import type { GameStateManager } from '../../game/GameStateManager.js';
 import { WorldGenerator } from '@etheria/world-generator';
+import { REGIONS } from '@etheria/shared';
 
 const generator = new WorldGenerator(42);
 const chunkCache = new Map<string, unknown>();
@@ -19,10 +20,43 @@ const VALID_REGIONS = new Set([
 const CHUNK_LIMIT = 100000;
 
 export function handleWorld(
-  _io: GameServer,
+  io: GameServer,
   socket: GameSocket,
-  _gameState: GameStateManager
+  gameState: GameStateManager
 ) {
+
+  socket.on('player:teleport_request', async ({ region }) => {
+    if (!socket.data.authenticated) return;
+    const player = gameState.getPlayerBySocket(socket.id);
+    const destination = REGIONS[region];
+    if (!player || !destination || region === player.region) {
+      socket.emit('server:error', { code: 'INVALID_TELEPORT', message: 'This destination is unavailable.' });
+      return;
+    }
+    if (player.level < destination.minLevel) {
+      socket.emit('server:error', {
+        code: 'LEVEL_REQUIREMENT',
+        message: `You need level ${destination.minLevel} to enter ${destination.name}.`,
+      });
+      return;
+    }
+    const oldRegion = player.region;
+    const { x, y } = destination.spawnPoint;
+    if (!gameState.teleportPlayer(player.characterId, region, x, y)) return;
+    socket.leave(`region:${oldRegion}`);
+    socket.join(`region:${region}`);
+    socket.to(`region:${oldRegion}`).emit('player:despawn', { playerId: player.characterId });
+    socket.emit('region:teleported', { region, x, y, name: destination.name });
+    socket.to(`region:${region}`).emit('player:spawn', {
+      player: {
+        id: player.id, characterId: player.characterId, name: player.name,
+        class: player.class, level: player.level, x, y, region,
+        hp: player.hp, maxHp: player.maxHp, animation: 'idle', facing: 'south',
+      },
+    });
+    await gameState.persistAll();
+  });
+
   socket.on('world:request_chunk', ({ chunkX, chunkY, region }) => {
     // A player must authenticate before requesting world data.
     if (!socket.data.authenticated) {

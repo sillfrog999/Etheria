@@ -162,6 +162,7 @@ export function handleAuth(
         characterId: char.id,
         name: char.name,
         class: char.class,
+        modelId: char.appearance?.modelId || 'elf_male',
         level: char.level,
         x: char.pos_x,
         y: char.pos_y,

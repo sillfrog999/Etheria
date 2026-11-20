@@ -1059,9 +1059,6 @@ export class ThreeWorld {
     this.socket.off('combat:damage', this.handlers.damage);
     this.socket.off('combat:ability_used', this.handlers.abilityUsed);
     this.socket.off('player:stats_update', this.handlers.statsUpdate);
-    this.socket.off('gather:start', this.handlers.gatherStart);
-    this.socket.off('gather:complete', this.handlers.gatherComplete);
-    this.socket.off('gather:fail', this.handlers.gatherFail);
     this.scene.traverse((object: any) => {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();

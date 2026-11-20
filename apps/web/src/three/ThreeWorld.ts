@@ -616,28 +616,8 @@ export class ThreeWorld {
     );
 
     if (normalizedType === 'tree' || normalizedType === 'forest') {
-      const fallback = new THREE.Group();
-
-      const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.2, 1.6, 6),
-        new THREE.MeshStandardMaterial({ color: 0x55402e })
-      );
-      trunk.position.y = 0.8;
-
-      const canopy = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(1.05, 1),
-        new THREE.MeshStandardMaterial({
-          color: 0x355b3d,
-          roughness: 0.95,
-          flatShading: true
-        })
-      );
-      canopy.position.y = 2;
-      canopy.scale.set(1, 1.1, 0.9);
-      canopy.castShadow = true;
-      fallback.add(trunk, canopy);
-      group.add(fallback);
-
+      // Trees are rendered only from the supplied Nature MegaKit models.
+      // Intentionally do not create procedural trunk/canopy fallbacks.
       const index = hash % 5 + 1;
       this.loadNatureModel(
         group,

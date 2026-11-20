@@ -43,10 +43,13 @@ export function handleWorld(
     const oldRegion = player.region;
     const { x, y } = destination.spawnPoint;
     if (!gameState.teleportPlayer(player.characterId, region, x, y)) return;
+    // Persist the destination before notifying the client to reload.
+    // Otherwise auth may read the previous region from the database.
+    await gameState.persistAll();
+
     socket.leave(`region:${oldRegion}`);
     socket.join(`region:${region}`);
     socket.to(`region:${oldRegion}`).emit('player:despawn', { playerId: player.characterId });
-    socket.emit('region:teleported', { region, x, y, name: destination.name });
     socket.to(`region:${region}`).emit('player:spawn', {
       player: {
         id: player.id, characterId: player.characterId, name: player.name,
@@ -54,7 +57,7 @@ export function handleWorld(
         hp: player.hp, maxHp: player.maxHp, animation: 'idle', facing: 'south',
       },
     });
-    await gameState.persistAll();
+    socket.emit('region:teleported', { region, x, y, name: destination.name });
   });
 
   socket.on('world:request_chunk', ({ chunkX, chunkY, region }) => {

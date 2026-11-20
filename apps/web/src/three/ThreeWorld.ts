@@ -318,6 +318,7 @@ export class ThreeWorld {
     );
     body.position.y = 0.72;
     body.castShadow = true;
+    body.name = 'fallback-actor-body';
     const cloak = new THREE.Mesh(
       new THREE.ConeGeometry(0.34, 0.72, 6),
       new THREE.MeshStandardMaterial({ color: cloakColor, roughness: 0.95 })
@@ -325,12 +326,14 @@ export class ThreeWorld {
     cloak.position.set(0, 0.66, 0.12);
     cloak.rotation.x = Math.PI;
     cloak.castShadow = true;
+    cloak.name = 'fallback-actor-cloak';
     const head = new THREE.Mesh(
       new THREE.SphereGeometry(0.22, 12, 10),
       new THREE.MeshStandardMaterial({ color: 0xc9a98a, roughness: 0.9 })
     );
     head.position.y = 1.28;
     head.castShadow = true;
+    head.name = 'fallback-actor-head';
     group.add(body, cloak, head);
   }
 
@@ -338,6 +341,21 @@ export class ThreeWorld {
     this.loader.load(path, (gltf: any) => {
       if (this.disposed) return;
       const model = gltf.scene;
+      // Remove the primitive placeholder actor once the real character GLB is
+      // ready. In particular, the placeholder cone cloak sat over the model's
+      // torso/shoulders and could visually cover its upper arms.
+      for (const placeholder of [...target.children]) {
+        if (typeof placeholder.name === 'string' && placeholder.name.startsWith('fallback-actor-')) {
+          target.remove(placeholder);
+          placeholder.traverse((node: any) => {
+            if (node instanceof THREE.Mesh) {
+              node.geometry.dispose();
+              const materials = Array.isArray(node.material) ? node.material : [node.material];
+              materials.forEach((material: any) => material.dispose());
+            }
+          });
+        }
+      }
       model.traverse((node: any) => {
         if (node instanceof THREE.Mesh) {
           node.castShadow = true;
@@ -345,79 +363,13 @@ export class ThreeWorld {
         }
       });
 
+      // Keep the model's authored bind/rest pose. The previous forced world-space
+      // shoulder/elbow rotations depended on guessed rig axes and could twist or
+      // hide limbs on models with a different skeleton orientation.
       const allBones: THREE.Bone[] = [];
       model.traverse((node: THREE.Object3D) => {
         if (node instanceof THREE.Bone) allBones.push(node);
       });
-
-      // Pose each arm in two segments: upper arm diagonally outward from
-      // the shoulder, then forearm down from the elbow. This keeps the
-      // upper-arm silhouette visible instead of hiding it behind the cloak.
-      model.updateMatrixWorld(true);
-      const alignBoneToWorldDirection = (
-        bone: THREE.Bone,
-        childBone: THREE.Bone,
-        targetDirection: THREE.Vector3
-      ) => {
-        if (!bone.parent) return;
-        const origin = bone.getWorldPosition(new THREE.Vector3());
-        const end = childBone.getWorldPosition(new THREE.Vector3());
-        const currentDirection = end.sub(origin);
-        if (currentDirection.lengthSq() < 0.000001) return;
-        const worldDelta = new THREE.Quaternion().setFromUnitVectors(
-          currentDirection.normalize(),
-          targetDirection.clone().normalize()
-        );
-        const parentWorldRotation = bone.parent.getWorldQuaternion(new THREE.Quaternion());
-        const currentWorldRotation = bone.getWorldQuaternion(new THREE.Quaternion());
-        const desiredWorldRotation = worldDelta.multiply(currentWorldRotation);
-        bone.quaternion.copy(
-          parentWorldRotation.invert().multiply(desiredWorldRotation)
-        );
-        model.updateMatrixWorld(true);
-      };
-
-      for (const bone of allBones) {
-        const name = bone.name.toLowerCase().replace(/[^a-z]/g, '');
-        const isUpperArm = name.includes('upperarm') ||
-          (name.includes('arm') && !name.includes('lower') && !name.includes('forearm') &&
-            bone.children.some((child) => child instanceof THREE.Bone &&
-              /lower|forearm/.test(child.name.toLowerCase().replace(/[^a-z]/g, ''))));
-        if (!isUpperArm) continue;
-
-        const side = name.includes('left') || name.endsWith('l') ? 'left'
-          : name.includes('right') || name.endsWith('r') ? 'right' : 'center';
-        if (side === 'center') continue;
-
-        const elbowBone = bone.children.find((child): child is THREE.Bone =>
-          child instanceof THREE.Bone &&
-          /lower|forearm/.test(child.name.toLowerCase().replace(/[^a-z]/g, ''))
-        );
-        if (!elbowBone) continue;
-
-        const outward = side === 'left' ? -1 : 1;
-        // Shoulder -> elbow: clearly away from the torso, slightly down.
-        alignBoneToWorldDirection(
-          bone,
-          elbowBone,
-          new THREE.Vector3(outward * 0.94, -0.28, 0.18)
-        );
-
-        const wristBone = elbowBone.children.find((child): child is THREE.Bone =>
-          child instanceof THREE.Bone &&
-          /hand|wrist/.test(child.name.toLowerCase().replace(/[^a-z]/g, ''))
-        ) ?? elbowBone.children.find((child): child is THREE.Bone =>
-          child instanceof THREE.Bone
-        );
-        if (wristBone) {
-          // Elbow -> wrist: hang down naturally, with a tiny outward angle.
-          alignBoneToWorldDirection(
-            elbowBone,
-            wristBone,
-            new THREE.Vector3(outward * 0.12, -1, 0.08)
-          );
-        }
-      }
 
       const motionBones: Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }> = [];
       for (const node of allBones) {

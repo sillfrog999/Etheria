@@ -1,6 +1,6 @@
 
 import type { NetworkPlayer, Monster, InventorySlot, ItemInstance } from '@etheria/shared';
-import { MONSTER_DATABASE } from '@etheria/game-data';
+import { MONSTER_DATABASE, getMonster } from '@etheria/game-data';
 import type { Env } from '../config/env.js';
 import { getSupabaseAdmin } from '../db/supabase.js';
 
@@ -150,6 +150,46 @@ export class GameStateManager {
 
   getMonstersInRegion(region: string): Monster[] {
     return Array.from(this.monsters.values()).filter(m => m.region === region);
+  }
+
+  ensureGreenfallMonsters(centerX: number, centerY: number): Monster[] {
+    const region = 'greenfall';
+    const existing = this.getMonstersInRegion(region);
+    if (existing.length > 0) return existing;
+
+    const spawnPoints = [
+      { definitionId: 'forest_wolf', dx: 7, dy: 3 },
+      { definitionId: 'goblin_scout', dx: -6, dy: 5 },
+      { definitionId: 'giant_spider', dx: 3, dy: -8 },
+      { definitionId: 'forest_wolf', dx: -9, dy: -4 },
+    ];
+
+    for (const point of spawnPoints) {
+      const definition = getMonster(point.definitionId);
+      if (!definition || !definition.regions.includes(region)) continue;
+
+      const x = centerX + point.dx;
+      const y = centerY + point.dy;
+      const monster: Monster = {
+        id: `greenfall_${point.definitionId}_${Math.round(x)}_${Math.round(y)}`,
+        definitionId: definition.id,
+        name: definition.name,
+        level: definition.level,
+        hp: definition.maxHp,
+        maxHp: definition.maxHp,
+        attack: definition.attack,
+        defence: definition.defence,
+        x,
+        y,
+        region,
+        state: 'idle',
+        spawnX: x,
+        spawnY: y,
+      };
+      this.addMonster(monster);
+    }
+
+    return this.getMonstersInRegion(region);
   }
 
   private tick() {

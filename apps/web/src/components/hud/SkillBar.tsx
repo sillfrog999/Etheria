@@ -3,7 +3,7 @@ import { useGameStore } from '../../store/gameStore';
 import { getSocket } from '../../lib/socket';
 import { ABILITY_DATABASE, DEFAULT_HOTBAR } from '@etheria/game-data';
 
-const HOTKEYS = ['Q', 'W', 'E', 'R', 'T', 'Y', 'A', 'S', 'D', 'F', 'G', 'H'];
+const HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
 
 export function SkillBar() {
   const { character, targetId } = useGameStore();

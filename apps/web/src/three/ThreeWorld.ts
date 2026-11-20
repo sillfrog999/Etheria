@@ -8,6 +8,18 @@ const CHUNK_SIZE = 32;
 const TILE_SIZE = 1;
 const MODEL_ROOT = '/assets/3d';
 
+const CHARACTER_MODEL_FILES: Record<string, string> = {
+  elf_female: 'Elf_Female.glb',
+  elf_male: 'Elf_Male.glb',
+  orc_female: 'Orc_Female.glb',
+  orc_male: 'Orc_Male.glb'
+};
+
+function getCharacterModelPath(modelId?: string) {
+  const file = CHARACTER_MODEL_FILES[modelId || ''] || 'Elf_Male.glb';
+  return `${MODEL_ROOT}/characters/selectable/${file}`;
+}
+
 type Point = { x: number; y: number };
 type Clickable = { kind: 'resource' | 'monster' | 'npc'; id: string } | { kind: 'portal'; id: string; region: string };
 
@@ -146,7 +158,7 @@ export class ThreeWorld {
     this.createActor(this.player, 0x8e9c78, 0x252b27);
     this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
     this.scene.add(this.player);
-    this.loadModel(this.player, `${MODEL_ROOT}/characters/player.glb`);
+    this.loadModel(this.player, getCharacterModelPath(state.character?.appearance?.modelId));
 
     this.socket.on('connect:ack', this.handlers.ack);
     this.socket.on('region:teleported', this.handlers.regionTeleported);
@@ -766,7 +778,7 @@ export class ThreeWorld {
     group.userData.previousPosition = group.position.clone();
     this.scene.add(group);
     this.remotePlayers.set(player.characterId, group);
-    this.loadModel(group, `${MODEL_ROOT}/characters/player.glb`);
+    this.loadModel(group, getCharacterModelPath(player.modelId));
   }
 
   private spawnMonster(monster: any) {

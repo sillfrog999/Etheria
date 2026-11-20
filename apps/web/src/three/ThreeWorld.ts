@@ -31,6 +31,7 @@ export class ThreeWorld {
   private resourceObjects = new Map<string, any>();
   private remotePlayers = new Map<string, any>();
   private monsters = new Map<string, any>();
+  private npcs = new Map<string, THREE.Group>();
   private lastMoveSent = 0;
   private frame = 0;
   private disposed = false;
@@ -79,6 +80,14 @@ export class ThreeWorld {
       }
     },
     statsUpdate: (stats: any) => useGameStore.getState().updateStats(stats),
+    gatherStart: ({ nodeId, duration }: any) => {
+      const resource = this.resourceNameFromNode(nodeId);
+      this.addSystemMessage(`Đang thu thập ${resource}... (${Math.ceil((duration || 0) / 1000)} giây)`);
+    },
+    gatherComplete: ({ item, xp, skill }: any) => {
+      this.addSystemMessage(`Đã thu thập ${item?.quantity ?? 1} ${item?.name ?? 'tài nguyên'} · +${xp ?? 0} XP ${skill ?? ''}`.trim());
+    },
+    gatherFail: ({ reason }: any) => this.addSystemMessage(`Thu thập thất bại: ${reason ?? 'Không thể thu thập tài nguyên.'}`),
     abilityUsed: ({ casterId, abilityId, targetId, targetX, targetY }: any) => {
       const caster = casterId === useGameStore.getState().character?.id
         ? this.player
@@ -135,6 +144,9 @@ export class ThreeWorld {
     this.socket.on('combat:damage', this.handlers.damage);
     this.socket.on('combat:ability_used', this.handlers.abilityUsed);
     this.socket.on('player:stats_update', this.handlers.statsUpdate);
+    this.socket.on('gather:start', this.handlers.gatherStart);
+    this.socket.on('gather:complete', this.handlers.gatherComplete);
+    this.socket.on('gather:fail', this.handlers.gatherFail);
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -144,6 +156,30 @@ export class ThreeWorld {
     this.animate();
   }
 
+
+  private addSystemMessage(content: string) {
+    const now = Date.now();
+    useGameStore.getState().addChatMessage({
+      id: `system-${now}-${Math.random().toString(36).slice(2, 7)}`,
+      senderId: 'system',
+      senderName: 'Hệ thống',
+      content,
+      channel: 'system',
+      timestamp: now,
+    } as any);
+  }
+
+  private resourceNameFromNode(nodeId: string) {
+    const resourceId = String(nodeId ?? '').split('_').slice(3).join('_');
+    const names: Record<string, string> = {
+      wood: 'Gỗ', ancient_wood: 'Gỗ cổ đại', copper_ore: 'Quặng đồng',
+      tin_ore: 'Quặng thiếc', iron_ore: 'Quặng sắt', coal: 'Than',
+      silver_ore: 'Quặng bạc', gold_ore: 'Quặng vàng', mithril_ore: 'Mithril',
+      crystal_shards: 'Mảnh tinh thể', herbs: 'Thảo mộc', rare_herbs: 'Thảo mộc hiếm',
+      fiber: 'Sợi', fish: 'Cá', hide: 'Da thú',
+    };
+    return names[resourceId] ?? (resourceId.replaceAll('_', ' ') || 'tài nguyên');
+  }
 
   private addGreenfallVillage() {
     const makeHouse = (x: number, z: number, scale = 1) => {
@@ -180,8 +216,12 @@ export class ThreeWorld {
 
     const makeNpc = (id: string, name: string, x: number, z: number, coat: number) => {
       const npc = new THREE.Group();
-      this.createActor(npc, coat, 0x3d342d);
+      const modelRoot = new THREE.Group();
+      modelRoot.name = 'npc-model-root';
+      npc.add(modelRoot);
+      this.createActor(modelRoot, coat, 0x3d342d);
       npc.position.set(x, 0, z);
+      npc.userData.idlePhase = Math.random() * Math.PI * 2;
       npc.userData.clickable = { kind: 'npc', id } satisfies Clickable;
       const canvas = document.createElement('canvas');
       canvas.width = 512; canvas.height = 96;
@@ -196,6 +236,14 @@ export class ThreeWorld {
       const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false }));
       tag.position.y = 2.15; tag.scale.set(2.2, 0.42, 1); npc.add(tag);
       this.scene.add(npc);
+      this.npcs.set(id, npc);
+      const raceRoot = `${MODEL_ROOT}/imports/asset2/Characters - Fantasy Races Kit[Standard]/Exports/GLB (Godot-Unreal)`;
+      const modelByNpc: Record<string, string> = {
+        npc_elder_aldric: `${raceRoot}/Elf_Male.glb`,
+        npc_merchant_mira: `${raceRoot}/Elf_Female.glb`,
+        npc_guard_rowan: `${raceRoot}/Orc_Male.glb`,
+      };
+      this.loadModel(modelRoot, modelByNpc[id], id === 'npc_guard_rowan' ? 2 : 1.85);
     };
     makeNpc('npc_elder_aldric', 'Elder Aldric', 15, 10, 0x9b8060);
     makeNpc('npc_merchant_mira', 'Merchant Mira', 24, 18, 0x8a6b83);
@@ -292,6 +340,7 @@ export class ThreeWorld {
         -center.z * model.scale.z
       );
 
+      model.name = 'loaded-model';
       target.clear();
       target.add(model);
     }, undefined, (error: unknown) => {
@@ -875,8 +924,24 @@ export class ThreeWorld {
     }
 
     const isMoving = Boolean(dx || dy || this.destination);
-    this.player.position.set(this.playerPos.x, isMoving ? Math.sin(performance.now() * 0.012) * 0.045 : 0, this.playerPos.y);
+    const elapsed = performance.now() * 0.001;
+    this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
+    const playerModel = this.player.children.find((child) => child.name === 'loaded-model');
+    if (playerModel) {
+      const gait = isMoving ? Math.sin(elapsed * 11) : 0;
+      playerModel.position.y = isMoving ? Math.abs(gait) * 0.055 : 0;
+      playerModel.rotation.z = THREE.MathUtils.damp(playerModel.rotation.z, isMoving ? Math.sin(elapsed * 5.5) * 0.035 : 0, 9, delta);
+      playerModel.rotation.x = THREE.MathUtils.damp(playerModel.rotation.x, isMoving ? 0.035 : 0, 8, delta);
+    }
     if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);
+    for (const npc of this.npcs.values()) {
+      const phase = npc.userData.idlePhase as number;
+      const model = npc.children.find((child) => child.name === 'npc-model-root');
+      if (model) {
+        model.position.y = Math.sin(elapsed * 1.7 + phase) * 0.018;
+        model.rotation.z = Math.sin(elapsed * 0.85 + phase) * 0.012;
+      }
+    }
     const desired = new THREE.Vector3(this.playerPos.x + 9, 13, this.playerPos.y + 11);
     this.camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
     this.camera.lookAt(this.playerPos.x, 0, this.playerPos.y);
@@ -922,6 +987,9 @@ export class ThreeWorld {
     this.socket.off('combat:damage', this.handlers.damage);
     this.socket.off('combat:ability_used', this.handlers.abilityUsed);
     this.socket.off('player:stats_update', this.handlers.statsUpdate);
+    this.socket.off('gather:start', this.handlers.gatherStart);
+    this.socket.off('gather:complete', this.handlers.gatherComplete);
+    this.socket.off('gather:fail', this.handlers.gatherFail);
     this.scene.traverse((object: any) => {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();

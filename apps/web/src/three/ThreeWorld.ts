@@ -9,7 +9,7 @@ const TILE_SIZE = 1;
 const MODEL_ROOT = '/assets/3d';
 
 type Point = { x: number; y: number };
-type Clickable = { kind: 'resource' | 'monster' | 'npc'; id: string };
+type Clickable = { kind: 'resource' | 'monster' | 'npc'; id: string } | { kind: 'portal'; id: string; region: string };
 
 export class ThreeWorld {
   private scene = new THREE.Scene();
@@ -58,6 +58,11 @@ export class ThreeWorld {
 
   private handlers = {
     ack: () => this.requestChunks(),
+    regionTeleported: ({ region, x, y, name }: any) => {
+      useGameStore.setState({ currentRegion: region, playerPos: { x, y }, targetId: null, targetType: null });
+      this.addChatNotice(`You have arrived in ${name}.`);
+      window.location.reload();
+    },
     chunk: ({ chunk }: any) => this.renderChunk(chunk as WorldChunk),
     playerSpawn: ({ player }: any) => this.spawnRemotePlayer(player),
     playerMove: ({ playerId, x, y }: any) => {
@@ -142,6 +147,7 @@ export class ThreeWorld {
     this.loadModel(this.player, `${MODEL_ROOT}/characters/player.glb`);
 
     this.socket.on('connect:ack', this.handlers.ack);
+    this.socket.on('region:teleported', this.handlers.regionTeleported);
     this.socket.on('world:chunk', this.handlers.chunk);
     this.socket.on('player:spawn', this.handlers.playerSpawn);
     this.socket.on('player:move', this.handlers.playerMove);
@@ -235,6 +241,63 @@ export class ThreeWorld {
     makeNpc('npc_alchemist_syl', 'Alchemist Syl', 20, 27, 0x718b70);
     makeNpc('npc_quartermaster_ren', 'Quartermaster Ren', 5, 26, 0x7d718f);
     makeNpc('npc_scout_lyra', 'Scout Lyra', 30, 24, 0x788b68);
+    this.addRegionPortals();
+  }
+
+
+  private addChatNotice(content: string) {
+    useGameStore.getState().addChatMessage({
+      id: `world-${Date.now()}`, channel: 'system', content, timestamp: Date.now(),
+    } as any);
+  }
+
+  private addRegionPortals() {
+    const destinations = [
+      { id: 'aurelia', name: 'Aurelia', x: 36, z: 8, color: 0xe5bd62 },
+      { id: 'silverwood', name: 'Silverwood', x: 40, z: 20, color: 0x65c98b },
+      { id: 'ashen_mountains', name: 'Ashen Mountains', x: 36, z: 32, color: 0xb5a18a },
+      { id: 'frostmere', name: 'Frostmere', x: 4, z: 38, color: 0x83dfff },
+      { id: 'emberlands', name: 'Emberlands', x: 18, z: 40, color: 0xff7045 },
+      { id: 'the_void', name: 'The Void', x: 30, z: 40, color: 0xb18aff },
+    ];
+    for (const destination of destinations) {
+      const portal = new THREE.Group();
+      const glow = new THREE.Mesh(
+        new THREE.TorusGeometry(0.95, 0.13, 12, 36),
+        new THREE.MeshStandardMaterial({ color: destination.color, emissive: destination.color, emissiveIntensity: 1.5, metalness: 0.35, roughness: 0.25 })
+      );
+      glow.position.y = 1.45;
+      portal.add(glow);
+      const inner = new THREE.Mesh(
+        new THREE.CircleGeometry(0.82, 32),
+        new THREE.MeshBasicMaterial({ color: destination.color, transparent: true, opacity: 0.22, side: THREE.DoubleSide })
+      );
+      inner.position.y = 1.45;
+      portal.add(inner);
+      const pillarMat = new THREE.MeshStandardMaterial({ color: 0x665642, metalness: 0.65, roughness: 0.45 });
+      for (const side of [-1, 1]) {
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.2, 2.6, 8), pillarMat);
+        pillar.position.set(side * 1.05, 1.3, 0);
+        portal.add(pillar);
+      }
+      const top = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.22, 0.32), pillarMat);
+      top.position.y = 2.68;
+      portal.add(top);
+      portal.position.set(destination.x, 0, destination.z);
+      portal.userData.clickable = { kind: 'portal', id: destination.id, region: destination.id } satisfies Clickable;
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 96;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = 'rgba(16, 14, 12, .86)';
+        ctx.beginPath(); ctx.roundRect(8, 8, 496, 80, 14); ctx.fill();
+        ctx.font = 'bold 34px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f4dfb7'; ctx.fillText(destination.name, 256, 49, 470);
+      }
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthWrite: false }));
+      tag.position.set(0, 3.15, 0); tag.scale.set(2.5, 0.48, 1); portal.add(tag);
+      this.scene.add(portal);
+    }
   }
 
   private showNpcDialogue(id: string) {
@@ -833,6 +896,9 @@ export class ThreeWorld {
         this.socket.emit('gather:start', { nodeId: clickable.id });
       } else if (clickable.kind === 'npc') {
         this.showNpcDialogue(clickable.id);
+      } else if (clickable.kind === 'portal') {
+        this.socket.emit('player:teleport_request', { region: clickable.region });
+        this.addChatNotice(`Traveling to ${clickable.id.replace(/_/g, ' ')}...`);
       } else {
         useGameStore.getState().setTarget(clickable.id, 'monster');
         const target = this.monsters.get(clickable.id);
@@ -1083,6 +1149,7 @@ export class ThreeWorld {
     this.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.renderer.domElement.removeEventListener('wheel', this.onWheel);
     this.socket.off('connect:ack', this.handlers.ack);
+    this.socket.off('region:teleported', this.handlers.regionTeleported);
     this.socket.off('world:chunk', this.handlers.chunk);
     this.socket.off('player:spawn', this.handlers.playerSpawn);
     this.socket.off('player:move', this.handlers.playerMove);

@@ -129,11 +129,8 @@ export function handleAuth(
 
       gameState.addPlayer(player);
 
-      // Greenfall needs real server-side monster instances; world chunks only
-      // contain terrain and decorative objects, not combat entities.
-      if (char.region === 'greenfall') {
-        gameState.ensureGreenfallMonsters(char.pos_x, char.pos_y);
-      }
+      // Create server-side encounters for the player's region (Aurelia remains a safe city).
+      gameState.ensureRegionMonsters(char.region, char.pos_x, char.pos_y);
 
       // Join region room
       socket.join(`region:${char.region}`);
@@ -147,10 +144,9 @@ export function handleAuth(
         y: char.pos_y,
       });
 
-      // Broadcast the current region's monsters. Existing clients ignore
-      // duplicates by monster id; the joining client receives the full set.
+      // Send the current region's monsters only to this newly authenticated client.
       for (const monster of gameState.getMonstersInRegion(char.region)) {
-        io.to(`region:${char.region}`).emit('combat:monster_spawn', { monster });
+        socket.emit('combat:monster_spawn', { monster });
       }
 
       // Send current inventory

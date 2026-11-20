@@ -211,7 +211,7 @@ export class GameStateManager {
       if (!definition) continue;
 
       const nearbyPlayer = Array.from(this.players.values()).find(p =>
-        p.region === monster.region &&
+        p.region === monster.region && p.hp > 0 &&
         Math.sqrt(
           Math.pow(p.x - monster.x, 2) +
           Math.pow(p.y - monster.y, 2)
@@ -229,7 +229,7 @@ export class GameStateManager {
       if ((monster.state === 'chase' || monster.state === 'attack') && monster.targetPlayerId) {
         const target = this.players.get(monster.targetPlayerId);
 
-        if (target) {
+        if (target && target.hp > 0) {
           const dist = Math.sqrt(
             Math.pow(target.x - monster.x, 2) +
             Math.pow(target.y - monster.y, 2)

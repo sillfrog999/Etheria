@@ -19,6 +19,24 @@ export function setupSocketHandlers(io: GameServer, gameState: GameStateManager,
   gameState.setMonsterUpdateHandler((monster) => {
     io.to(`region:${monster.region}`).emit('combat:monster_update', { monster });
   });
+  gameState.setMonsterAttackHandler((monster, player, damage) => {
+    player.hp = Math.max(0, player.hp - damage);
+    io.to(`region:${player.region}`).emit('combat:damage', {
+      attackerId: monster.id,
+      targetId: player.characterId,
+      damage,
+      isCrit: false,
+      damageType: 'physical',
+    });
+    io.to(player.socketId).emit('player:stats_update', {
+      hp: player.hp, maxHp: player.maxHp,
+      mana: player.mana, maxMana: player.maxMana,
+      stamina: player.stamina, maxStamina: player.maxStamina,
+    });
+    if (player.hp <= 0) {
+      io.to(`region:${player.region}`).emit('combat:player_death', { playerId: player.characterId });
+    }
+  });
 
   io.on('connection', (socket: GameSocket) => {
     console.log(`[Socket] Connection: ${socket.id}`);

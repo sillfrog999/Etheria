@@ -3,6 +3,7 @@ import type { NetworkPlayer, Monster, InventorySlot, ItemInstance } from '@ether
 import { MONSTER_DATABASE, getMonster } from '@etheria/game-data';
 import type { Env } from '../config/env.js';
 import { getSupabaseAdmin } from '../db/supabase.js';
+import { REGIONS } from '@etheria/shared';
 
 export interface ServerPlayer extends NetworkPlayer {
   socketId: string;
@@ -173,28 +174,75 @@ export class GameStateManager {
     return Array.from(this.monsters.values()).filter(m => m.region === region);
   }
 
-  ensureGreenfallMonsters(centerX: number, centerY: number): Monster[] {
-    const region = 'greenfall';
+  ensureRegionMonsters(region: string, centerX: number, centerY: number): Monster[] {
     const existing = this.getMonstersInRegion(region);
     if (existing.length > 0) return existing;
 
-    const spawnPoints = [
-      { definitionId: 'forest_wolf', dx: 7, dy: 3 },
-      { definitionId: 'goblin_scout', dx: -6, dy: 5 },
-      { definitionId: 'giant_spider', dx: 3, dy: -8 },
-      { definitionId: 'forest_wolf', dx: -9, dy: -4 },
-    ];
+    // Only regions with hostile encounter zones receive monsters. Aurelia is a safe city.
+    const spawnTable: Record<string, string[]> = {
+      greenfall: [
+        'forest_wolf','forest_wolf','forest_wolf','forest_wolf',
+        'giant_spider','giant_spider','giant_spider','giant_spider',
+        'skeleton_warrior','skeleton_warrior',
+        'goblin_scout','goblin_scout','goblin_scout','goblin_scout',
+        'goblin_warrior','goblin_warrior','goblin_warrior','goblin_chieftain'
+      ],
+      silverwood: [
+        'giant_spider','giant_spider','giant_spider','giant_spider','giant_spider',
+        'forest_bear','forest_bear','forest_bear','forest_bear',
+        'skeleton_warrior','skeleton_warrior','skeleton_warrior',
+        'skeletal_mage','skeletal_mage','skeletal_mage','giant_spider'
+      ],
+      ashen_mountains: [
+        'mountain_troll','mountain_troll','mountain_troll',
+        'goblin_warrior','goblin_warrior','goblin_warrior','goblin_warrior','goblin_warrior',
+        'skeletal_mage','skeletal_mage','skeletal_mage','skeletal_mage',
+        'bandit_leader','bandit_leader','bandit_leader','bandit_leader','bandit_leader','bandit_leader'
+      ],
+      frostmere: [
+        'ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf',
+        'ice_elemental','ice_elemental','ice_elemental','ice_elemental','ice_elemental','ice_elemental','ice_elemental'
+      ],
+      emberlands: Array.from({ length: 14 }, () => 'fire_demon'),
+      the_void: [
+        'void_wraith','void_wraith','void_wraith','void_wraith','void_wraith','void_wraith',
+        'void_wraith','void_wraith','void_wraith','void_wraith','void_titan','void_titan'
+      ]
+    };
 
-    for (const point of spawnPoints) {
-      const definition = getMonster(point.definitionId);
-      if (!definition || !definition.regions.includes(region)) continue;
+    const definitionIds = spawnTable[region] ?? [];
+    const regionInfo = REGIONS[region];
+    if (!regionInfo || definitionIds.length === 0) return [];
 
-      const x = centerX + point.dx;
-      const y = centerY + point.dy;
+    const regionLabel: Record<string, string> = {
+      greenfall: 'Greenfall',
+      silverwood: 'Silverwood',
+      ashen_mountains: 'Ashen Mountain',
+      frostmere: 'Frostmere',
+      emberlands: 'Emberlands',
+      the_void: 'Void'
+    };
+    const label = regionLabel[region] ?? 'Wild';
+    const bounds = regionInfo.bounds;
+
+    definitionIds.forEach((definitionId, index) => {
+      const definition = getMonster(definitionId);
+      if (!definition || !definition.regions.includes(region)) return;
+
+      // The committed monster library currently contains Puglin and generic Creature GLBs.
+      // Keep names truthful to those models instead of calling a generic model a wolf, bear, etc.
+      const displayName = definitionId.startsWith('goblin_')
+        ? definition.name
+        : `${label} Creature`;
+
+      const angle = index * 2.399963229728653;
+      const radius = 7 + (index % 5) * 2.2;
+      const x = Math.max(bounds.minX + 3, Math.min(bounds.maxX - 3, centerX + Math.cos(angle) * radius));
+      const y = Math.max(bounds.minY + 3, Math.min(bounds.maxY - 3, centerY + Math.sin(angle) * radius));
       const monster: Monster = {
-        id: `greenfall_${point.definitionId}_${Math.round(x)}_${Math.round(y)}`,
+        id: `${region}_${definition.id}_${index}_${Math.round(x)}_${Math.round(y)}`,
         definitionId: definition.id,
-        name: definition.name,
+        name: displayName,
         level: definition.level,
         hp: definition.maxHp,
         maxHp: definition.maxHp,
@@ -208,9 +256,13 @@ export class GameStateManager {
         spawnY: y,
       };
       this.addMonster(monster);
-    }
+    });
 
     return this.getMonstersInRegion(region);
+  }
+
+  ensureGreenfallMonsters(centerX: number, centerY: number): Monster[] {
+    return this.ensureRegionMonsters('greenfall', centerX, centerY);
   }
 
   private tick() {

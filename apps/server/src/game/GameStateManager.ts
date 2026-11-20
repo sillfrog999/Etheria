@@ -282,32 +282,52 @@ export class GameStateManager {
     }
   }
 
-  async persistAll(): Promise<void> {
-    if (this.persistQueue.size === 0 || !this.env) return;
+  async persistPlayer(characterId: string): Promise<boolean> {
+    const player = this.players.get(characterId);
+    if (!player || !this.env) {
+      console.error('[GameState] Cannot persist player: player or Supabase environment is missing.');
+      return false;
+    }
 
-    const toSave = Array.from(this.persistQueue);
-    this.persistQueue.clear();
-
-    const supabase = getSupabaseAdmin(this.env);
-
-    for (const charId of toSave) {
-      const player = this.players.get(charId);
-      if (!player) continue;
-
-      try {
-        await supabase.from('characters').update({
+    try {
+      const supabase = getSupabaseAdmin(this.env);
+      const { data, error } = await supabase
+        .from('characters')
+        .update({
           pos_x: player.x,
           pos_y: player.y,
           region: player.region,
           gold: player.gold,
-        }).eq('id', charId);
-      } catch (err) {
-        console.error(`[GameState] Failed to persist player ${charId}:`, err);
-      }
-    }
+        })
+        .eq('id', characterId)
+        .select('id')
+        .maybeSingle();
 
-    if (toSave.length > 0) {
-      console.log(`[GameState] Persisted ${toSave.length} players`);
+      if (error || !data) {
+        console.error(`[GameState] Failed to persist player ${characterId}:`, error ?? 'Character row was not updated.');
+        return false;
+      }
+
+      this.persistQueue.delete(characterId);
+      console.log(`[GameState] Persisted player ${characterId} in region ${player.region}`);
+      return true;
+    } catch (err) {
+      console.error(`[GameState] Failed to persist player ${characterId}:`, err);
+      return false;
+    }
+  }
+
+  async persistAll(): Promise<void> {
+    if (this.persistQueue.size === 0 || !this.env) return;
+
+    const toSave = Array.from(this.persistQueue);
+
+    for (const charId of toSave) {
+      const saved = await this.persistPlayer(charId);
+      if (!saved) {
+        // Keep failed writes queued so the periodic persistence task can retry.
+        this.persistQueue.add(charId);
+      }
     }
   }
 

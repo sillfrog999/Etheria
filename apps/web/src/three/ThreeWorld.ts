@@ -53,7 +53,7 @@ export class ThreeWorld {
     playerSpawn: ({ player }: any) => this.spawnRemotePlayer(player),
     playerMove: ({ playerId, x, y }: any) => {
       const remote = this.remotePlayers.get(playerId);
-      if (remote) remote.position.set(x, 0, y);
+      if (remote) remote.userData.destination = new THREE.Vector3(x, 0, y);
     },
     playerDespawn: ({ playerId }: any) => {
       const remote = this.remotePlayers.get(playerId);
@@ -330,6 +330,18 @@ export class ThreeWorld {
         }
       });
 
+      const motionBones: Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }> = [];
+      model.traverse((node) => {
+        if (!(node instanceof THREE.Bone)) return;
+        const boneName = node.name.toLowerCase().replace(/[^a-z]/g, '');
+        let kind = 'other';
+        if (boneName.includes('arm') || boneName.includes('hand')) kind = 'arm';
+        else if (boneName.includes('upleg') || boneName.includes('thigh') || boneName.includes('leg') || boneName.includes('foot')) kind = 'leg';
+        else if (boneName.includes('spine') || boneName.includes('chest')) kind = 'torso';
+        const side = boneName.includes('left') || boneName.endsWith('l') ? 'left' : boneName.includes('right') || boneName.endsWith('r') ? 'right' : 'center';
+        if (kind !== 'other') motionBones.push({ bone: node, base: node.rotation.clone(), kind, side });
+      });
+      model.userData.motionBones = motionBones;
       // Normalize Quaternius exports to a predictable in-game height and ground level.
       const bounds = new THREE.Box3().setFromObject(model);
       const size = bounds.getSize(new THREE.Vector3());
@@ -944,6 +956,21 @@ export class ThreeWorld {
       const attacking = performance.now() < this.attackAnimUntil;
       playerModel.rotation.x = THREE.MathUtils.damp(playerModel.rotation.x, attacking ? -0.22 : isMoving ? 0.035 : 0, attacking ? 22 : 8, delta);
       playerModel.rotation.y = THREE.MathUtils.damp(playerModel.rotation.y, attacking ? 0.16 : 0, 18, delta);
+      const bones = (playerModel.userData.motionBones ?? []) as Array<{ bone: THREE.Bone; base: THREE.Euler; kind: string; side: string }>;
+      for (const entry of bones) {
+        const direction = entry.side === 'left' ? 1 : entry.side === 'right' ? -1 : 0;
+        if (entry.kind === 'arm') {
+          const swing = isMoving ? gait * 0.42 * direction : 0;
+          const slash = attacking && entry.side === 'right' ? -0.95 : 0;
+          entry.bone.rotation.x = THREE.MathUtils.damp(entry.bone.rotation.x, entry.base.x + swing, 12, delta);
+          entry.bone.rotation.z = THREE.MathUtils.damp(entry.bone.rotation.z, entry.base.z + slash, attacking ? 24 : 10, delta);
+        } else if (entry.kind === 'leg') {
+          const swing = isMoving ? gait * 0.48 * direction : 0;
+          entry.bone.rotation.x = THREE.MathUtils.damp(entry.bone.rotation.x, entry.base.x + swing, 12, delta);
+        } else if (entry.kind === 'torso') {
+          entry.bone.rotation.z = THREE.MathUtils.damp(entry.bone.rotation.z, entry.base.z + (isMoving ? Math.sin(elapsed * 5.5) * 0.025 : 0), 8, delta);
+        }
+      }
     }
     if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);
     for (const npc of this.npcs.values()) {
@@ -958,6 +985,10 @@ export class ThreeWorld {
     this.camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
     this.camera.lookAt(this.playerPos.x, 0, this.playerPos.y);
 
+    for (const remote of this.remotePlayers.values()) {
+      const destination = remote.userData.destination as THREE.Vector3 | undefined;
+      if (destination) remote.position.lerp(destination, 1 - Math.pow(0.0001, delta));
+    }
     for (const monster of this.monsters.values()) {
       const destination = monster.userData.destination as THREE.Vector3 | undefined;
       if (destination) monster.position.lerp(destination, 1 - Math.pow(0.001, delta));

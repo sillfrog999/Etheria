@@ -121,6 +121,17 @@ export class GameStateManager {
     return false;
   }
 
+  teleportPlayer(characterId: string, region: string, x: number, y: number) {
+    const player = this.players.get(characterId);
+    if (!player) return false;
+    player.region = region;
+    player.x = x;
+    player.y = y;
+    player.lastMovement = Date.now();
+    this.persistQueue.add(characterId);
+    return true;
+  }
+
   updatePlayerGold(characterId: string, gold: number) {
     const player = this.players.get(characterId);
 

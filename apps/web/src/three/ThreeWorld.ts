@@ -585,7 +585,7 @@ export class ThreeWorld {
       7
     );
 
-    if (normalizedType === 'tree' || normalizedType === 'forest') {
+    if (normalizedType.includes('tree') || normalizedType === 'forest') {
       // Trees are rendered only from the supplied Nature MegaKit models.
       // Intentionally do not create procedural trunk/canopy fallbacks.
       const index = hash % 5 + 1;

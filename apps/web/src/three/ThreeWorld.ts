@@ -398,6 +398,54 @@ export class ThreeWorld {
         -center.z * model.scale.z
       );
 
+      // Lower both upper arms into a relaxed A-pose using the actual rig
+      // hierarchy. Align upperarm -> lowerarm toward a downward/outward
+      // direction in model space; this avoids guessing a local X/Y/Z axis.
+      model.updateMatrixWorld(true);
+      const modelWorldQ = model.getWorldQuaternion(new THREE.Quaternion());
+      const inverseModelWorldQ = modelWorldQ.clone().invert();
+      for (const side of ['l', 'r']) {
+        const upperArm = allBones.find((bone) =>
+          bone.name.toLowerCase().replace(/[^a-z]/g, '') === `upperarm${side}`
+        );
+        const lowerArm = allBones.find((bone) =>
+          bone.name.toLowerCase().replace(/[^a-z]/g, '') === `lowerarm${side}`
+        );
+        if (!upperArm || !lowerArm || !upperArm.parent) continue;
+
+        const shoulderModelPos = model.worldToLocal(
+          upperArm.getWorldPosition(new THREE.Vector3())
+        );
+        const sideSign = Math.abs(shoulderModelPos.x) > 0.001
+          ? Math.sign(shoulderModelPos.x)
+          : side === 'l' ? 1 : -1;
+        const targetModelDir = new THREE.Vector3(
+          sideSign * Math.cos(THREE.MathUtils.degToRad(38)),
+          -Math.sin(THREE.MathUtils.degToRad(38)),
+          0
+        ).normalize();
+
+        const parentWorldQ = upperArm.parent.getWorldQuaternion(new THREE.Quaternion());
+        const parentRelativeQ = inverseModelWorldQ.clone().multiply(parentWorldQ);
+        const targetParentDir = targetModelDir
+          .applyQuaternion(parentRelativeQ.invert())
+          .normalize();
+        const baseQuaternion = upperArm.quaternion.clone();
+        const currentParentDir = lowerArm.position.clone()
+          .applyQuaternion(baseQuaternion)
+          .normalize();
+        const correction = new THREE.Quaternion().setFromUnitVectors(
+          currentParentDir,
+          targetParentDir
+        );
+        upperArm.quaternion.copy(correction.multiply(baseQuaternion));
+      }
+
+      // Animation starts from the corrected rest pose, not the original raised pose.
+      for (const entry of motionBones) {
+        if (entry.kind === 'arm') entry.base.copy(entry.bone.rotation);
+      }
+
       model.name = 'loaded-model';
       target.clear();
       target.add(model);

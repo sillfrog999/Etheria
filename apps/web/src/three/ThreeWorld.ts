@@ -187,21 +187,33 @@ export class ThreeWorld {
     group.add(body, cloak, head);
   }
 
-  private loadModel(target: any, path: string) {
+  private loadModel(target: any, path: string, targetHeight = 1.8) {
     this.loader.load(path, (gltf: any) => {
       if (this.disposed) return;
       const model = gltf.scene;
-      model.scale.setScalar(1);
       model.traverse((node: any) => {
         if (node instanceof THREE.Mesh) {
           node.castShadow = true;
           node.receiveShadow = true;
         }
       });
+
+      // Normalize Quaternius exports to a predictable in-game height and ground level.
+      const bounds = new THREE.Box3().setFromObject(model);
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      if (size.y > 0) model.scale.setScalar(targetHeight / size.y);
+      model.position.set(
+        -center.x * model.scale.x,
+        -bounds.min.y * model.scale.y,
+        -center.z * model.scale.z
+      );
+
       target.clear();
       target.add(model);
-    }, undefined, () => {
-      // Keep the procedural actor when optional Quaternius files have not been installed.
+    }, undefined, (error: unknown) => {
+      // Keep the procedural fallback if the optional model is missing or cannot be parsed.
+      console.warn(`[Etheria 3D] Failed to load model: ${path}`, error);
     });
   }
 
@@ -341,7 +353,16 @@ export class ThreeWorld {
     group.userData.clickable = { kind: 'monster', id: monster.id } satisfies Clickable;
     this.scene.add(group);
     this.monsters.set(monster.id, group);
-    this.loadModel(group, `${MODEL_ROOT}/monsters/greenfall/creature.glb`);
+    const monsterKind = [
+      monster.type,
+      monster.monsterType,
+      monster.templateId,
+      monster.name,
+    ].filter((value) => typeof value === 'string').join(' ').toLowerCase();
+    const modelPath = monsterKind.includes('puglin')
+      ? `${MODEL_ROOT}/monsters/greenfall/puglin.glb`
+      : `${MODEL_ROOT}/monsters/greenfall/creature.glb`;
+    this.loadModel(group, modelPath, 1.45);
   }
 
   private showDamage(position: any, damage: number, critical: boolean) {

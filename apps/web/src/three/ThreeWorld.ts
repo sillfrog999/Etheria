@@ -365,8 +365,11 @@ export class ThreeWorld {
         if (currentDirection.lengthSq() < 0.000001) continue;
 
         // Keep the arms relaxed but visibly separated from the torso.
-        const outward = side === 'left' ? -0.55 : 0.55;
-        const targetDirection = new THREE.Vector3(outward, -0.84, 0).normalize();
+        // Keep the upper arms clearly outside the torso/cloak silhouette.
+        // A small forward offset also prevents the forearms from being hidden
+        // when viewed from the game's elevated third-person camera.
+        const outward = side === 'left' ? -0.82 : 0.82;
+        const targetDirection = new THREE.Vector3(outward, -0.57, 0.12).normalize();
         const worldDelta = new THREE.Quaternion().setFromUnitVectors(
           currentDirection.normalize(),
           targetDirection
@@ -383,7 +386,8 @@ export class ThreeWorld {
       for (const node of allBones) {
         const boneName = node.name.toLowerCase().replace(/[^a-z]/g, '');
         let kind = 'other';
-        if (boneName.includes('arm') || boneName.includes('hand')) kind = 'arm';
+        if (boneName.includes('hand') || boneName.includes('finger')) kind = 'hand';
+        else if (boneName.includes('arm')) kind = 'arm';
         else if (boneName.includes('upleg') || boneName.includes('thigh') || boneName.includes('leg') || boneName.includes('foot')) kind = 'leg';
         else if (boneName.includes('spine') || boneName.includes('chest')) kind = 'torso';
         const side = boneName.includes('left') || boneName.endsWith('l') ? 'left' : boneName.includes('right') || boneName.endsWith('r') ? 'right' : 'center';
@@ -988,8 +992,10 @@ export class ThreeWorld {
       for (const entry of bones) {
         const direction = entry.side === 'left' ? 1 : entry.side === 'right' ? -1 : 0;
         if (entry.kind === 'arm') {
-          const swing = isMoving ? gait * 0.12 * direction : 0;
-          const slash = attacking && entry.side === 'right' ? -0.95 : 0;
+          const isForearm = entry.bone.name.toLowerCase().includes('lower') ||
+            entry.bone.name.toLowerCase().includes('forearm');
+          const swing = isMoving ? gait * (isForearm ? 0.055 : 0.09) * direction : 0;
+          const slash = attacking && entry.side === 'right' && !isForearm ? -0.65 : 0;
           entry.bone.rotation.x = THREE.MathUtils.damp(entry.bone.rotation.x, entry.base.x + swing, 12, delta);
           entry.bone.rotation.z = THREE.MathUtils.damp(entry.bone.rotation.z, entry.base.z + slash, attacking ? 24 : 10, delta);
         } else if (entry.kind === 'leg') {

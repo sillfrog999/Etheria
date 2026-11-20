@@ -3,6 +3,7 @@ export interface NetworkPlayer {
   characterId: string;
   name: string;
   class: string;
+  modelId?: string;
   level: number;
   x: number;
   y: number;

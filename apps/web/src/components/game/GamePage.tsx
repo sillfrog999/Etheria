@@ -24,7 +24,7 @@ import { WorldMapWindow } from '../windows/WorldMapWindow';
 export function GamePage() {
   const gameRef = useRef<ThreeWorld | null>(null);
   const worldContainerRef = useRef<HTMLDivElement | null>(null);
-  const { token, character, gatheringState, setGatheringState } = useGameStore();
+  const { token, character } = useGameStore();
 
   useEffect(() => {
     const socket = getSocket();
@@ -59,27 +59,45 @@ export function GamePage() {
     };
 
     const onGatherStart = ({ nodeId, duration }: any) => {
-      setGatheringState({ nodeId, duration, startTime: Date.now() });
+      const resourceId = String(nodeId ?? '').split('_').slice(3).join('_');
+      const resourceNames: Record<string, string> = {
+        wood: 'Gỗ', ancient_wood: 'Gỗ cổ đại', copper_ore: 'Quặng đồng',
+        tin_ore: 'Quặng thiếc', iron_ore: 'Quặng sắt', coal: 'Than',
+        silver_ore: 'Quặng bạc', gold_ore: 'Quặng vàng', mithril_ore: 'Mithril',
+        crystal_shards: 'Mảnh tinh thể', herbs: 'Thảo mộc', rare_herbs: 'Thảo mộc hiếm',
+        fiber: 'Sợi', fish: 'Cá', hide: 'Da thú',
+      };
+      const resource = resourceNames[resourceId] ?? resourceId.replace(/_/g, ' ') || 'tài nguyên';
+      useGameStore.getState().addChatMessage({
+        id: `gather-start-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        senderId: 'system',
+        senderName: 'Hệ thống',
+        channel: 'system',
+        content: `Bắt đầu thu thập ${resource} · ${Math.ceil((duration || 0) / 1000)} giây`,
+        timestamp: Date.now(),
+      } as any);
     };
 
     const onGatherComplete = ({ item, xp, skill }: any) => {
-      setGatheringState(null);
       useGameStore.getState().addChatMessage({
         id: Math.random().toString(),
+        senderId: 'system',
+        senderName: 'Hệ thống',
         channel: 'system',
-        content: `Gathered ${item.quantity}x ${item.name} (+${xp} ${skill} XP)`,
+        content: `Đã thu thập ${item?.quantity ?? 1}x ${item?.name ?? 'tài nguyên'} (+${xp ?? 0} ${skill ?? ''} XP)`,
         timestamp: Date.now()
-      });
+      } as any);
     };
 
     const onGatherFail = ({ reason }: any) => {
-      setGatheringState(null);
       useGameStore.getState().addChatMessage({
         id: Math.random().toString(),
+        senderId: 'system',
+        senderName: 'Hệ thống',
         channel: 'system',
-        content: `Gathering failed: ${reason}`,
+        content: `Thu thập thất bại: ${reason ?? 'Không thể thu thập tài nguyên.'}`,
         timestamp: Date.now()
-      });
+      } as any);
     };
 
     const onStatsUpdate = (stats: any) => {
@@ -165,51 +183,6 @@ export function GamePage() {
         id="three-world-container"
         style={{ width: '100%', height: '100%' }}
       />
-
-      {gatheringState && (
-        <div style={{
-          position: 'absolute',
-          top: '42%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '200px',
-          padding: '8px',
-          background: 'rgba(0, 0, 0, 0.85)',
-          border: '1px solid var(--color-gold)',
-          borderRadius: '4px',
-          textAlign: 'center',
-          zIndex: 30,
-        }}>
-          <span style={{
-            fontSize: '11px',
-            color: 'var(--color-gold)',
-            fontWeight: 'bold'
-          }}>
-            Gathering resource...
-          </span>
-
-          <div style={{
-            height: '6px',
-            background: '#222',
-            borderRadius: '3px',
-            marginTop: '6px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              height: '100%',
-              background: '#4caf50',
-              animation: `progress ${gatheringState.duration}ms linear forwards`,
-            }} />
-          </div>
-
-          <style>{`
-            @keyframes progress {
-              from { width: 0%; }
-              to { width: 100%; }
-            }
-          `}</style>
-        </div>
-      )}
 
       <PlayerFrame />
       <Minimap />

@@ -422,3 +422,7 @@ body, html {
   .wow-chat { left: 8px !important; bottom: 76px !important; width: min(290px, calc(100vw - 16px)) !important; height: 145px !important; }
   .hud-skillbar { bottom: 8px !important; }
 }
+
+.wow-chat { bottom: 22px !important; }
+@media (max-width: 900px) { .wow-chat { bottom: 132px !important; } }
+@media (max-width: 560px) { .wow-chat { bottom: 76px !important; } }

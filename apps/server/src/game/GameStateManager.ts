@@ -27,6 +27,7 @@ export class GameStateManager {
   private persistQueue = new Set<string>();
   private env?: Env;
   private monsterUpdateHandler?: (monster: Monster) => void;
+  private monsterAttackHandler?: (monster: Monster, player: ServerPlayer, damage: number) => void;
 
   private readonly TICK_MS = 50;
   private readonly PERSIST_INTERVAL_MS = 30000;
@@ -44,6 +45,10 @@ export class GameStateManager {
 
   setMonsterUpdateHandler(handler: (monster: Monster) => void) {
     this.monsterUpdateHandler = handler;
+  }
+
+  setMonsterAttackHandler(handler: (monster: Monster, player: ServerPlayer, damage: number) => void) {
+    this.monsterAttackHandler = handler;
   }
 
   addPlayer(player: ServerPlayer) {
@@ -232,6 +237,13 @@ export class GameStateManager {
 
           if (dist <= definition.attackRange) {
             monster.state = 'attack';
+            const attackCooldown = Math.max(700, definition.attackCooldown * 1000);
+            if (Date.now() - (monster.lastAttack ?? 0) >= attackCooldown) {
+              monster.lastAttack = Date.now();
+              const damage = Math.max(1, Math.floor(monster.attack * (0.9 + Math.random() * 0.2)));
+              this.monsterAttackHandler?.(monster, target, damage);
+            }
+            this.monsterUpdateHandler?.(monster);
           } else if (dist > 0) {
             const dx = (target.x - monster.x) / dist;
             const dy = (target.y - monster.y) / dist;

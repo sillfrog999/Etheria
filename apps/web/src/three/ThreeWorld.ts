@@ -9,7 +9,7 @@ const TILE_SIZE = 1;
 const MODEL_ROOT = '/assets/3d';
 
 type Point = { x: number; y: number };
-type Clickable = { kind: 'resource' | 'monster'; id: string };
+type Clickable = { kind: 'resource' | 'monster' | 'npc'; id: string };
 
 export class ThreeWorld {
   private scene = new THREE.Scene();
@@ -60,7 +60,10 @@ export class ThreeWorld {
     monsterSpawn: ({ monster }: any) => this.spawnMonster(monster),
     monsterUpdate: ({ monster }: any) => {
       const mesh = this.monsters.get(monster.id);
-      if (mesh) mesh.position.set(monster.x, 0, monster.y);
+      if (mesh) {
+        mesh.userData.destination = new THREE.Vector3(monster.x, 0, monster.y);
+        mesh.userData.state = monster.state;
+      }
     },
     monsterDeath: ({ monsterId }: any) => {
       const mesh = this.monsters.get(monsterId);
@@ -75,6 +78,7 @@ export class ThreeWorld {
         this.showSkillEffect(target.position, isCrit ? 'arcane' : 'impact');
       }
     },
+    statsUpdate: (stats: any) => useGameStore.getState().updateStats(stats),
     abilityUsed: ({ casterId, abilityId, targetId, targetX, targetY }: any) => {
       const caster = casterId === useGameStore.getState().character?.id
         ? this.player
@@ -114,8 +118,10 @@ export class ThreeWorld {
 
     this.addLighting();
     this.addGroundBase();
+    this.addGreenfallVillage();
     this.createActor(this.player, 0x8e9c78, 0x252b27);
-    this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
+    this.player.position.set(this.playerPos.x, (dx || dy || this.destination ? Math.sin(performance.now() * 0.012) * 0.045 : 0), this.playerPos.y);
+    if (dx || dy) this.player.rotation.y = Math.atan2(dx, dy);
     this.scene.add(this.player);
     this.loadModel(this.player, `${MODEL_ROOT}/characters/player.glb`);
 
@@ -129,6 +135,7 @@ export class ThreeWorld {
     this.socket.on('combat:monster_death', this.handlers.monsterDeath);
     this.socket.on('combat:damage', this.handlers.damage);
     this.socket.on('combat:ability_used', this.handlers.abilityUsed);
+    this.socket.on('player:stats_update', this.handlers.statsUpdate);
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -136,6 +143,81 @@ export class ThreeWorld {
     this.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.resize();
     this.animate();
+  }
+
+
+  private addGreenfallVillage() {
+    const makeHouse = (x: number, z: number, scale = 1) => {
+      const house = new THREE.Group();
+      const wood = new THREE.MeshStandardMaterial({ color: 0x75513a, roughness: 1 });
+      const plaster = new THREE.MeshStandardMaterial({ color: 0xb6a17c, roughness: 1 });
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0x493a35, roughness: 1, flatShading: true });
+      const base = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.8, 3.6), plaster);
+      base.position.y = 1.4;
+      base.castShadow = true;
+      base.receiveShadow = true;
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(3.25, 1.8, 4), roofMat);
+      roof.position.y = 3.7;
+      roof.rotation.y = Math.PI / 4;
+      roof.scale.z = 0.82;
+      roof.castShadow = true;
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.45, 0.12), wood);
+      door.position.set(0, 0.73, 1.86);
+      const windowMat = new THREE.MeshStandardMaterial({ color: 0xe4b96c, emissive: 0x5b3514, emissiveIntensity: 0.25 });
+      for (const wx of [-1.25, 1.25]) {
+        const windowMesh = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.62, 0.1), windowMat);
+        windowMesh.position.set(wx, 1.65, 1.86);
+        house.add(windowMesh);
+      }
+      house.add(base, roof, door);
+      house.position.set(x, 0, z);
+      house.scale.setScalar(scale);
+      this.scene.add(house);
+    };
+    makeHouse(8, 8, 1.05);
+    makeHouse(22, 9, 0.9);
+    makeHouse(9, 23, 0.85);
+    makeHouse(27, 25, 1.1);
+
+    const makeNpc = (id: string, name: string, x: number, z: number, coat: number) => {
+      const npc = new THREE.Group();
+      this.createActor(npc, coat, 0x3d342d);
+      npc.position.set(x, 0, z);
+      npc.userData.clickable = { kind: 'npc', id } satisfies Clickable;
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 96;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = 'rgba(20, 18, 15, .82)';
+        ctx.beginPath(); ctx.roundRect(8, 8, 496, 80, 16); ctx.fill();
+        ctx.font = 'bold 38px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f3d9a7'; ctx.fillText(name, 256, 49, 470);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false }));
+      tag.position.y = 2.15; tag.scale.set(2.2, 0.42, 1); npc.add(tag);
+      this.scene.add(npc);
+    };
+    makeNpc('npc_elder_aldric', 'Elder Aldric', 15, 10, 0x9b8060);
+    makeNpc('npc_merchant_mira', 'Merchant Mira', 24, 18, 0x8a6b83);
+    makeNpc('npc_guard_rowan', 'Guard Rowan', 13, 25, 0x657d72);
+  }
+
+  private showNpcDialogue(id: string) {
+    const lines: Record<string, string> = {
+      npc_elder_aldric: 'Welcome to Greenfall, traveler. The forest has grown restless. Keep your weapon ready.',
+      npc_merchant_mira: 'I trade in useful supplies. More goods will arrive as the village grows.',
+      npc_guard_rowan: 'Wolves and goblins roam beyond the village. Stay close to the roads.',
+    };
+    const message = lines[id] ?? 'The villager nods to you.';
+    useGameStore.getState().addChatMessage({
+      id: `npc-${id}-${Date.now()}`,
+      senderId: id,
+      senderName: id === 'npc_elder_aldric' ? 'Elder Aldric' : id === 'npc_merchant_mira' ? 'Merchant Mira' : 'Guard Rowan',
+      content: message,
+      channel: 'system',
+      timestamp: Date.now(),
+    } as any);
   }
 
   private addLighting() {
@@ -742,6 +824,8 @@ export class ThreeWorld {
       if (!clickable) continue;
       if (clickable.kind === 'resource') {
         this.socket.emit('gather:start', { nodeId: clickable.id });
+      } else if (clickable.kind === 'npc') {
+        this.showNpcDialogue(clickable.id);
       } else {
         useGameStore.getState().setTarget(clickable.id, 'monster');
         this.socket.emit('combat:attack', { targetId: clickable.id });
@@ -796,6 +880,13 @@ export class ThreeWorld {
     this.camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
     this.camera.lookAt(this.playerPos.x, 0, this.playerPos.y);
 
+    for (const monster of this.monsters.values()) {
+      const destination = monster.userData.destination as THREE.Vector3 | undefined;
+      if (destination) monster.position.lerp(destination, 1 - Math.pow(0.001, delta));
+      if (monster.userData.state === 'attack') monster.rotation.z = Math.sin(performance.now() * 0.018) * 0.06;
+      else monster.rotation.z *= 0.85;
+    }
+
     const now = performance.now();
     if (now - this.lastMoveSent > 66) {
       this.lastMoveSent = now;
@@ -829,6 +920,7 @@ export class ThreeWorld {
     this.socket.off('combat:monster_death', this.handlers.monsterDeath);
     this.socket.off('combat:damage', this.handlers.damage);
     this.socket.off('combat:ability_used', this.handlers.abilityUsed);
+    this.socket.off('player:stats_update', this.handlers.statsUpdate);
     this.scene.traverse((object: any) => {
       if (object instanceof THREE.Mesh) {
         object.geometry.dispose();

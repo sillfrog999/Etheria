@@ -24,6 +24,7 @@ export interface ServerToClientEvents {
   'server:error': (data: { code: string; message: string }) => void;
 
   'world:chunk': (data: { chunk: WorldChunk }) => void;
+  'region:teleported': (data: { region: string; x: number; y: number; name: string }) => void;
   'world:resource_update': (data: {
     nodeId: string;
     depleted: boolean;

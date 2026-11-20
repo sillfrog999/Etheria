@@ -29,6 +29,7 @@ export class ThreeWorld {
   private keys = new Set<string>();
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
+  private cameraZoom = 1;
   private chunks = new Set<string>();
   private resourceObjects = new Map<string, any>();
   private remotePlayers = new Map<string, any>();
@@ -45,6 +46,14 @@ export class ThreeWorld {
   };
   private onKeyUp = (event: KeyboardEvent) => this.keys.delete(event.key.toLowerCase());
   private onPointerDown = (event: PointerEvent) => this.handlePointer(event);
+  private onWheel = (event: WheelEvent) => {
+    event.preventDefault();
+    this.cameraZoom = THREE.MathUtils.clamp(
+      this.cameraZoom * Math.exp(event.deltaY * 0.001),
+      0.55,
+      2.2
+    );
+  };
   private onResize = () => this.resize();
 
   private handlers = {
@@ -159,6 +168,7 @@ export class ThreeWorld {
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('resize', this.onResize);
     this.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
+    this.renderer.domElement.addEventListener('wheel', this.onWheel, { passive: false });
     this.resize();
     this.animate();
   }
@@ -1045,7 +1055,11 @@ export class ThreeWorld {
         model.rotation.z = Math.sin(elapsed * 0.85 + phase) * 0.012;
       }
     }
-    const desired = new THREE.Vector3(this.playerPos.x + 9, 13, this.playerPos.y + 11);
+    const desired = new THREE.Vector3(
+      this.playerPos.x + 9 * this.cameraZoom,
+      13 * this.cameraZoom,
+      this.playerPos.y + 11 * this.cameraZoom
+    );
     this.camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
     this.camera.lookAt(this.playerPos.x, 0, this.playerPos.y);
 
@@ -1083,6 +1097,7 @@ export class ThreeWorld {
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('resize', this.onResize);
     this.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
+    this.renderer.domElement.removeEventListener('wheel', this.onWheel);
     this.socket.off('connect:ack', this.handlers.ack);
     this.socket.off('world:chunk', this.handlers.chunk);
     this.socket.off('player:spawn', this.handlers.playerSpawn);

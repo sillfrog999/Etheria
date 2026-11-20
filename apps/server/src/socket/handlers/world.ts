@@ -41,11 +41,21 @@ export function handleWorld(
       return;
     }
     const oldRegion = player.region;
+    const oldX = player.x;
+    const oldY = player.y;
     const { x, y } = destination.spawnPoint;
     if (!gameState.teleportPlayer(player.characterId, region, x, y)) return;
-    // Persist the destination before notifying the client to reload.
-    // Otherwise auth may read the previous region from the database.
-    await gameState.persistAll();
+
+    // Do not tell the client to reload until Supabase confirms the new region.
+    const saved = await gameState.persistPlayer(player.characterId);
+    if (!saved) {
+      gameState.teleportPlayer(player.characterId, oldRegion, oldX, oldY);
+      socket.emit('server:error', {
+        code: 'TELEPORT_SAVE_FAILED',
+        message: 'Travel could not be saved. Please try again.',
+      });
+      return;
+    }
 
     socket.leave(`region:${oldRegion}`);
     socket.join(`region:${region}`);

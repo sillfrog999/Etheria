@@ -50,6 +50,7 @@ export class ThreeWorld {
   private lastMoveSent = 0;
   private frame = 0;
   private disposed = false;
+  private teleportPending = false;
   private onKeyDown = (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
@@ -71,9 +72,15 @@ export class ThreeWorld {
   private handlers = {
     ack: () => this.requestChunks(),
     regionTeleported: ({ region, x, y, name }: any) => {
+      this.teleportPending = false;
       useGameStore.setState({ currentRegion: region, playerPos: { x, y }, targetId: null, targetType: null });
       this.addChatNotice(`You have arrived in ${name}.`);
+      // The region scene is rebuilt from the character's saved location after reload.
       window.location.reload();
+    },
+    serverError: ({ message, code }: any) => {
+      if (this.teleportPending) this.teleportPending = false;
+      this.addChatNotice(message || code || 'The request could not be completed.');
     },
     chunk: ({ chunk }: any) => this.renderChunk(chunk as WorldChunk),
     playerSpawn: ({ player }: any) => this.spawnRemotePlayer(player),
@@ -162,6 +169,7 @@ export class ThreeWorld {
 
     this.socket.on('connect:ack', this.handlers.ack);
     this.socket.on('region:teleported', this.handlers.regionTeleported);
+    this.socket.on('server:error', this.handlers.serverError);
     this.socket.on('world:chunk', this.handlers.chunk);
     this.socket.on('player:spawn', this.handlers.playerSpawn);
     this.socket.on('player:move', this.handlers.playerMove);
@@ -967,6 +975,8 @@ export class ThreeWorld {
       } else if (clickable.kind === 'npc') {
         this.showNpcDialogue(clickable.id);
       } else if (clickable.kind === 'portal') {
+        if (this.teleportPending) return;
+        this.teleportPending = true;
         this.socket.emit('player:teleport_request', { region: clickable.region });
         this.addChatNotice(`Traveling to ${clickable.id.replace(/_/g, ' ')}...`);
       } else {
@@ -1220,6 +1230,7 @@ export class ThreeWorld {
     this.renderer.domElement.removeEventListener('wheel', this.onWheel);
     this.socket.off('connect:ack', this.handlers.ack);
     this.socket.off('region:teleported', this.handlers.regionTeleported);
+    this.socket.off('server:error', this.handlers.serverError);
     this.socket.off('world:chunk', this.handlers.chunk);
     this.socket.off('player:spawn', this.handlers.playerSpawn);
     this.socket.off('player:move', this.handlers.playerMove);

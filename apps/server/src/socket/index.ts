@@ -16,6 +16,9 @@ export type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents, Inte
 
 export function setupSocketHandlers(io: GameServer, gameState: GameStateManager, env: Env) {
   gameState.setEnv(env);
+  gameState.setMonsterUpdateHandler((monster) => {
+    io.to(`region:${monster.region}`).emit('combat:monster_update', { monster });
+  });
 
   io.on('connection', (socket: GameSocket) => {
     console.log(`[Socket] Connection: ${socket.id}`);

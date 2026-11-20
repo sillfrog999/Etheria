@@ -18,6 +18,7 @@ const VALID_REGIONS = new Set([
 ]);
 
 const CHUNK_LIMIT = 100000;
+const activeTeleports = new Set<string>();
 
 export function handleWorld(
   io: GameServer,
@@ -40,34 +41,59 @@ export function handleWorld(
       });
       return;
     }
+    if (activeTeleports.has(player.characterId)) return;
+
+    activeTeleports.add(player.characterId);
     const oldRegion = player.region;
     const oldX = player.x;
     const oldY = player.y;
     const { x, y } = destination.spawnPoint;
-    if (!gameState.teleportPlayer(player.characterId, region, x, y)) return;
 
-    // Do not tell the client to reload until Supabase confirms the new region.
-    const saved = await gameState.persistPlayer(player.characterId);
-    if (!saved) {
+    try {
+      if (!gameState.teleportPlayer(player.characterId, region, x, y)) {
+        socket.emit('server:error', { code: 'TELEPORT_FAILED', message: 'Could not move your character. Please try again.' });
+        return;
+      }
+
+      // Save first. A success event is never sent until Supabase confirms the destination.
+      const saved = await gameState.persistPlayer(player.characterId);
+      if (!saved) {
+        gameState.teleportPlayer(player.characterId, oldRegion, oldX, oldY);
+        await gameState.persistPlayer(player.characterId);
+        socket.emit('server:error', {
+          code: 'TELEPORT_SAVE_FAILED',
+          message: 'Travel could not be saved. Please try again. Check the server log for the database error.',
+        });
+        return;
+      }
+
+      const destinationMonsters = gameState.ensureRegionMonsters(region, x, y);
+      socket.leave(`region:${oldRegion}`);
+      socket.join(`region:${region}`);
+      socket.to(`region:${oldRegion}`).emit('player:despawn', { playerId: player.characterId });
+      socket.to(`region:${region}`).emit('player:spawn', {
+        player: {
+          id: player.id, characterId: player.characterId, name: player.name,
+          class: player.class, modelId: player.modelId || 'elf_male', level: player.level,
+          x, y, region, hp: player.hp, maxHp: player.maxHp, animation: 'idle', facing: 'south',
+        },
+      });
+
+      // Send monsters only to the traveler; do not rebroadcast duplicates to everyone in the region.
+      for (const monster of destinationMonsters) {
+        socket.emit('combat:monster_spawn', { monster });
+      }
+      socket.emit('region:teleported', { region, x, y, name: destination.name });
+    } catch (error) {
+      console.error('[World] Teleport failed:', error);
       gameState.teleportPlayer(player.characterId, oldRegion, oldX, oldY);
       socket.emit('server:error', {
-        code: 'TELEPORT_SAVE_FAILED',
-        message: 'Travel could not be saved. Please try again.',
+        code: 'TELEPORT_FAILED',
+        message: 'Travel failed unexpectedly. Please try again.',
       });
-      return;
+    } finally {
+      activeTeleports.delete(player.characterId);
     }
-
-    socket.leave(`region:${oldRegion}`);
-    socket.join(`region:${region}`);
-    socket.to(`region:${oldRegion}`).emit('player:despawn', { playerId: player.characterId });
-    socket.to(`region:${region}`).emit('player:spawn', {
-      player: {
-        id: player.id, characterId: player.characterId, name: player.name,
-        class: player.class, level: player.level, x, y, region,
-        hp: player.hp, maxHp: player.maxHp, animation: 'idle', facing: 'south',
-      },
-    });
-    socket.emit('region:teleported', { region, x, y, name: destination.name });
   });
 
   socket.on('world:request_chunk', ({ chunkX, chunkY, region }) => {

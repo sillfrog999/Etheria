@@ -180,7 +180,7 @@ export class ThreeWorld {
       crystal_shards: 'Mảnh tinh thể', herbs: 'Thảo mộc', rare_herbs: 'Thảo mộc hiếm',
       fiber: 'Sợi', fish: 'Cá', hide: 'Da thú',
     };
-    return names[resourceId] ?? (resourceId.replaceAll('_', ' ') || 'tài nguyên');
+    return names[resourceId] ?? (resourceId.replace(/_/g, ' ') || 'tài nguyên');
   }
 
   private addGreenfallVillage() {

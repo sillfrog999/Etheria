@@ -294,7 +294,7 @@ export class ThreeWorld {
   private addRegionPortals() {
     const currentRegion = useGameStore.getState().currentRegion || 'greenfall';
     const destinations = [
-      { id: 'greenfall', name: 'Greenfall', x: 5, z: 6, color: 0x75c878 },
+      { id: 'greenfall', name: 'Greenfall', x: currentRegion === 'aurelia' ? 8 : 5, z: currentRegion === 'aurelia' ? 12 : 6, color: 0x75c878 },
       { id: 'aurelia', name: 'Aurelia', x: 36, z: 8, color: 0xe5bd62 },
       { id: 'silverwood', name: 'Silverwood', x: 40, z: 20, color: 0x65c98b },
       { id: 'ashen_mountains', name: 'Ashen Mountains', x: 36, z: 32, color: 0xb5a18a },
@@ -335,7 +335,7 @@ export class ThreeWorld {
         ctx.fillStyle = 'rgba(16, 14, 12, .86)';
         ctx.beginPath(); ctx.roundRect(8, 8, 496, 80, 14); ctx.fill();
         ctx.font = 'bold 34px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#f4dfb7'; ctx.fillText(destination.name, 256, 49, 470);
+        ctx.fillStyle = '#f4dfb7'; ctx.fillText('Enter', 256, 49, 470);
       }
       const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthWrite: false }));
       tag.position.set(0, 3.15, 0); tag.scale.set(2.5, 0.48, 1); portal.add(tag);
@@ -460,6 +460,45 @@ export class ThreeWorld {
     const fill = new THREE.DirectionalLight(0x8aa7c8, 0.45);
     fill.position.set(30, 20, -35);
     this.scene.add(fill);
+  }
+
+  private createGreenfallGroundTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return this.soilTexture;
+
+    ctx.fillStyle = '#766044';
+    ctx.fillRect(0, 0, 512, 512);
+
+    let seed = 739391;
+    const random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+
+    // Irregular, subtle grass growth mixed into the brown soil, not a solid green tile.
+    for (let i = 0; i < 1900; i++) {
+      const x = random() * 512;
+      const y = random() * 512;
+      const radius = 1.5 + random() * 8;
+      const green = random() > 0.48;
+      ctx.fillStyle = green
+        ? `rgba(${48 + Math.floor(random() * 35)}, ${78 + Math.floor(random() * 45)}, ${37 + Math.floor(random() * 24)}, ${0.12 + random() * 0.2})`
+        : `rgba(48, 34, 22, ${0.05 + random() * 0.1})`;
+      ctx.beginPath();
+      ctx.ellipse(x, y, radius * (0.7 + random()), radius * (0.35 + random() * 0.5), random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, 1);
+    texture.anisotropy = 8;
+    return texture;
   }
 
   private addGroundBase() {
@@ -729,7 +768,7 @@ export class ThreeWorld {
         const y = (tile.elevation || 0) * 0.12;
         this.groundHeights.set(`${wx},${wz}`, y);
         if (!tile.walkable) this.blockedTiles.add(`${wx},${wz}`);
-        const color = new THREE.Color(this.tileColor(String(tile.type)));
+        const color = new THREE.Color(chunk.coord.region === 'greenfall' && String(tile.type) === 'grass' ? 0x81916a : this.tileColor(String(tile.type)));
         positions.push(
           wx, y, wz,
           wx + TILE_SIZE, y, wz,
@@ -757,7 +796,7 @@ export class ThreeWorld {
     geometry.computeVertexNormals();
     const terrain = new THREE.Mesh(
       geometry,
-      new THREE.MeshStandardMaterial({ map: this.soilTexture, vertexColors: true, roughness: 1 })
+      new THREE.MeshStandardMaterial({ map: (chunk.coord.region === 'greenfall' ? this.createGreenfallGroundTexture() : this.soilTexture), vertexColors: true, roughness: 1 })
     );
     terrain.receiveShadow = true;
     this.scene.add(terrain);

@@ -400,7 +400,7 @@ export function CharacterSelect() {
                   marginBottom: '24px'
                 }}
               >
-                Select a class archetype and declare your name to enter Greenfall.
+                Select a class archetype and declare your name to enter.
               </p>
 
               {createError && (

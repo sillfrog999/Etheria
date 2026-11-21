@@ -1227,6 +1227,10 @@ export class ThreeWorld {
       kind: string;
       side: string;
     }>;
+    const actionName = target.userData.actionAnimationUntil > performance.now()
+      ? target.userData.actionAnimation as string
+      : '';
+    const gestureBlend = actionName ? 1 : 0;
 
     for (const entry of bones) {
       const side = entry.side === 'left' ? 1 : entry.side === 'right' ? -1 : 0;
@@ -1240,15 +1244,22 @@ export class ThreeWorld {
         const attackOffset = attacking && entry.side === 'right' && !isForearm
           ? -0.32
           : 0;
+        const raised = actionName === 'cast' ? -0.24
+          : actionName === 'heal' && entry.side === 'left' ? -0.32
+          : actionName === 'buff' ? -0.28
+          : 0;
+        const spread = actionName === 'buff' ? side * 0.16
+          : actionName === 'cast' ? side * 0.09
+          : 0;
         entry.bone.rotation.x = THREE.MathUtils.damp(
           entry.bone.rotation.x,
-          entry.base.x + armSwing,
+          entry.base.x + armSwing + raised * gestureBlend,
           13,
           delta
         );
         entry.bone.rotation.z = THREE.MathUtils.damp(
           entry.bone.rotation.z,
-          entry.base.z + attackOffset,
+          entry.base.z + attackOffset + spread * gestureBlend,
           attacking ? 18 : 12,
           delta
         );

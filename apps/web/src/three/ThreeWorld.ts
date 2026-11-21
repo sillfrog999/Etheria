@@ -58,9 +58,12 @@ export class ThreeWorld {
   private teleportPending = false;
   private onKeyDown = (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
-    if (key === ' ' && !event.repeat && this.grounded) {
-      this.verticalVelocity = 6.2;
-      this.grounded = false;
+    if (key === ' ') {
+      event.preventDefault();
+      if (!event.repeat && this.grounded) {
+        this.verticalVelocity = 6.2;
+        this.grounded = false;
+      }
     }
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
       this.keys.add(key);

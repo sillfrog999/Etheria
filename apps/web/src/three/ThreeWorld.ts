@@ -67,7 +67,7 @@ export class ThreeWorld {
         this.grounded = false;
       }
     }
-    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(key)) {
       this.keys.add(key);
     }
   };
@@ -669,7 +669,8 @@ export class ThreeWorld {
         const mixer = new THREE.AnimationMixer(model);
         const clips = gltf.animations as THREE.AnimationClip[];
         const idleClip = clips.find((clip) => /idle|stand|breath/i.test(clip.name)) ?? clips[0];
-        const walkClip = clips.find((clip) => /walk|run|locomotion/i.test(clip.name));
+        const walkClip = clips.find((clip) => /walk|locomotion/i.test(clip.name));
+        const runClip = clips.find((clip) => /run|sprint/i.test(clip.name));
         const attackClip = clips.find((clip) => /attack|slash|strike/i.test(clip.name));
         const castClip = clips.find((clip) => /cast|spell|magic/i.test(clip.name));
         const healClip = clips.find((clip) => /heal|healing|restore/i.test(clip.name));
@@ -679,6 +680,7 @@ export class ThreeWorld {
         model.userData.animationActions = {
           idle: idleClip ? mixer.clipAction(idleClip) : undefined,
           walk: walkClip ? mixer.clipAction(walkClip) : undefined,
+          run: runClip ? mixer.clipAction(runClip) : undefined,
           attack: attackClip ? mixer.clipAction(attackClip) : undefined,
           cast: castClip ? mixer.clipAction(castClip) : undefined,
           heal: healClip ? mixer.clipAction(healClip) : undefined,
@@ -1163,6 +1165,7 @@ export class ThreeWorld {
       const actions = model.userData.animationActions as {
         idle?: THREE.AnimationAction;
         walk?: THREE.AnimationAction;
+        run?: THREE.AnimationAction;
         attack?: THREE.AnimationAction;
         cast?: THREE.AnimationAction;
         heal?: THREE.AnimationAction;
@@ -1175,9 +1178,11 @@ export class ThreeWorld {
       const action = actionName ? actions[actionName] : undefined;
       const next = action ?? (attacking && actions.attack
         ? actions.attack
-        : speed > 0.18 && actions.walk
-          ? actions.walk
-          : actions.idle ?? actions.walk);
+        : speed > 4.2 && actions.run
+          ? actions.run
+          : speed > 0.18 && actions.walk
+            ? actions.walk
+            : actions.idle ?? actions.walk);
       const active = model.userData.activeAnimation as THREE.AnimationAction | null;
       if (next && next !== active) {
         next.reset();
@@ -1311,8 +1316,9 @@ export class ThreeWorld {
     let targetVY = 0;
     if (dx || dy) {
       const length = Math.hypot(dx, dy) || 1;
-      targetVX = (dx / length) * 3.5;
-      targetVY = (dy / length) * 3.5;
+      const moveSpeed = this.keys.has('shift') ? 5.5 : 3.5;
+      targetVX = (dx / length) * moveSpeed;
+      targetVY = (dy / length) * moveSpeed;
       this.destination = null;
     } else if (this.destination) {
       const vx = this.destination.x - this.playerPos.x;

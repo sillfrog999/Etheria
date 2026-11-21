@@ -29,6 +29,7 @@ export class ThreeWorld {
   private renderer: any;
   private clock = new THREE.Clock();
   private loader = new GLTFLoader();
+  private soilTexture = new THREE.TextureLoader().load('/assets/textures/greenfall-soil.webp');
   private natureModelCache = new Map<string, Promise<THREE.Group>>();
   private natureRoot = `${MODEL_ROOT}/imports/asset3/glTF`;
   private socket: EtheriaSocket;
@@ -154,6 +155,10 @@ export class ThreeWorld {
       y: state.playerPos?.y ?? state.character?.position?.y ?? 16,
     };
 
+    this.soilTexture.colorSpace = THREE.SRGBColorSpace;
+    this.soilTexture.wrapS = THREE.RepeatWrapping;
+    this.soilTexture.wrapT = THREE.RepeatWrapping;
+    this.soilTexture.anisotropy = 8;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     this.renderer.shadowMap.enabled = true;
@@ -458,9 +463,12 @@ export class ThreeWorld {
   }
 
   private addGroundBase() {
+    const baseTexture = this.soilTexture.clone();
+    baseTexture.needsUpdate = true;
+    baseTexture.repeat.set(96, 96);
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(1200, 1200),
-      new THREE.MeshStandardMaterial({ color: 0x263d2d, roughness: 1 })
+      new THREE.MeshStandardMaterial({ map: baseTexture, color: 0xaaa18b, roughness: 1 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.08;
@@ -708,6 +716,7 @@ export class ThreeWorld {
 
     const positions: number[] = [];
     const colors: number[] = [];
+    const uvs: number[] = [];
     const indices: number[] = [];
     let vertex = 0;
 
@@ -728,6 +737,13 @@ export class ThreeWorld {
           wx, y, wz + TILE_SIZE
         );
         for (let i = 0; i < 4; i++) colors.push(color.r, color.g, color.b);
+        const uvScale = 0.085;
+        uvs.push(
+          wx * uvScale, wz * uvScale,
+          (wx + TILE_SIZE) * uvScale, wz * uvScale,
+          (wx + TILE_SIZE) * uvScale, (wz + TILE_SIZE) * uvScale,
+          wx * uvScale, (wz + TILE_SIZE) * uvScale
+        );
         indices.push(vertex, vertex + 2, vertex + 1, vertex, vertex + 3, vertex + 2);
         vertex += 4;
       }
@@ -736,11 +752,12 @@ export class ThreeWorld {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
     const terrain = new THREE.Mesh(
       geometry,
-      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })
+      new THREE.MeshStandardMaterial({ map: this.soilTexture, vertexColors: true, roughness: 1 })
     );
     terrain.receiveShadow = true;
     this.scene.add(terrain);

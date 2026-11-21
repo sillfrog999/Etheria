@@ -59,8 +59,10 @@ export class ThreeWorld {
   private disposed = false;
   private teleportPending = false;
   private onKeyDown = (event: KeyboardEvent) => {
-    const key = event.key.toLowerCase();
-    if (key === ' ') {
+    const key = event.code === 'ShiftLeft' || event.code === 'ShiftRight'
+      ? 'shift'
+      : event.key.toLowerCase();
+    if (key === ' ' || event.code === 'Space') {
       event.preventDefault();
       if (!event.repeat && this.grounded) {
         this.verticalVelocity = 6.2;
@@ -69,9 +71,18 @@ export class ThreeWorld {
     }
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(key)) {
       this.keys.add(key);
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+        this.destination = null;
+      }
     }
   };
-  private onKeyUp = (event: KeyboardEvent) => this.keys.delete(event.key.toLowerCase());
+  private onKeyUp = (event: KeyboardEvent) => {
+    const key = event.code === 'ShiftLeft' || event.code === 'ShiftRight'
+      ? 'shift'
+      : event.key.toLowerCase();
+    this.keys.delete(key);
+  };
+  private onWindowBlur = () => this.keys.clear();
   private onPointerDown = (event: PointerEvent) => this.handlePointer(event);
   private onWheel = (event: WheelEvent) => {
     event.preventDefault();
@@ -208,8 +219,9 @@ export class ThreeWorld {
     this.socket.on('combat:ability_used', this.handlers.abilityUsed);
     this.socket.on('player:stats_update', this.handlers.statsUpdate);
 
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('keydown', this.onKeyDown, true);
+    window.addEventListener('keyup', this.onKeyUp, true);
+    window.addEventListener('blur', this.onWindowBlur);
     window.addEventListener('resize', this.onResize);
     this.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.renderer.domElement.addEventListener('wheel', this.onWheel, { passive: false });
@@ -668,7 +680,7 @@ export class ThreeWorld {
       if (Array.isArray(gltf.animations) && gltf.animations.length > 0) {
         const mixer = new THREE.AnimationMixer(model);
         const clips = gltf.animations as THREE.AnimationClip[];
-        const idleClip = clips.find((clip) => /idle|stand|breath/i.test(clip.name)) ?? clips[0];
+        const idleClip = clips.find((clip) => /idle|stand|breath/i.test(clip.name));
         const walkClip = clips.find((clip) => /walk|locomotion/i.test(clip.name));
         const runClip = clips.find((clip) => /run|sprint/i.test(clip.name));
         const attackClip = clips.find((clip) => /attack|slash|strike/i.test(clip.name));
@@ -1176,13 +1188,14 @@ export class ThreeWorld {
         ? target.userData.actionAnimation as 'cast' | 'heal' | 'buff' | 'teleport' | undefined
         : undefined;
       const action = actionName ? actions[actionName] : undefined;
+      const locomotionAction = speed > 4.8
+        ? actions.run ?? actions.walk
+        : speed > 0.18
+          ? actions.walk ?? actions.run
+          : actions.idle ?? actions.walk ?? actions.run;
       const next = action ?? (attacking && actions.attack
         ? actions.attack
-        : speed > 4.2 && actions.run
-          ? actions.run
-          : speed > 0.18 && actions.walk
-            ? actions.walk
-            : actions.idle ?? actions.walk);
+        : locomotionAction);
       const active = model.userData.activeAnimation as THREE.AnimationAction | null;
       if (next && next !== active) {
         next.reset();
@@ -1198,9 +1211,17 @@ export class ThreeWorld {
         model.userData.activeAnimation = next;
       }
       mixer.update(delta);
-      // If the model has no authored clip for this gesture, layer the
-      // lightweight procedural hand pose over its normal locomotion.
-      if (!actionName || action) return;
+      // Do not leave an idle-only rig frozen while it is moving. If the GLB
+      // has no clip for the current locomotion state, let the procedural
+      // skeleton motion below animate the arms and legs instead.
+      if (!actionName && !locomotionAction) {
+        const active = model.userData.activeAnimation as THREE.AnimationAction | null;
+        active?.fadeOut(0.12);
+        model.userData.activeAnimation = null;
+      }
+      // Keep authored locomotion when available; otherwise continue into the
+      // procedural fallback. Gestures also use the fallback if no clip exists.
+      if (action || locomotionAction) return;
     }
 
     const blend = THREE.MathUtils.clamp(speed / (monster ? 1.8 : 2.8), 0, 1);
@@ -1316,7 +1337,7 @@ export class ThreeWorld {
     let targetVY = 0;
     if (dx || dy) {
       const length = Math.hypot(dx, dy) || 1;
-      const moveSpeed = this.keys.has('shift') ? 5.5 : 3.5;
+      const moveSpeed = this.keys.has('shift') ? 7.2 : 3.8;
       targetVX = (dx / length) * moveSpeed;
       targetVY = (dy / length) * moveSpeed;
       this.destination = null;
@@ -1439,8 +1460,9 @@ export class ThreeWorld {
   dispose() {
     this.disposed = true;
     cancelAnimationFrame(this.frame);
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('keydown', this.onKeyDown, true);
+    window.removeEventListener('keyup', this.onKeyUp, true);
+    window.removeEventListener('blur', this.onWindowBlur);
     window.removeEventListener('resize', this.onResize);
     this.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.renderer.domElement.removeEventListener('wheel', this.onWheel);

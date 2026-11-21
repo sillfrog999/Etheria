@@ -1193,7 +1193,9 @@ export class ThreeWorld {
         model.userData.activeAnimation = next;
       }
       mixer.update(delta);
-      return;
+      // If the model has no authored clip for this gesture, layer the
+      // lightweight procedural hand pose over its normal locomotion.
+      if (!actionName || action) return;
     }
 
     const blend = THREE.MathUtils.clamp(speed / (monster ? 1.8 : 2.8), 0, 1);

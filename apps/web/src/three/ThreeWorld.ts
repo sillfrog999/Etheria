@@ -57,10 +57,25 @@ export class ThreeWorld {
   private frame = 0;
   private disposed = false;
   private teleportPending = false;
+  private getMovementKey(event: KeyboardEvent) {
+    const codeKeys: Record<string, string> = {
+      KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd',
+      ArrowUp: 'arrowup', ArrowDown: 'arrowdown',
+      ArrowLeft: 'arrowleft', ArrowRight: 'arrowright',
+      ShiftLeft: 'shift', ShiftRight: 'shift',
+    };
+    return codeKeys[event.code] ?? event.key.toLowerCase();
+  }
+
   private onKeyDown = (event: KeyboardEvent) => {
-    const key = event.code === 'ShiftLeft' || event.code === 'ShiftRight'
-      ? 'shift'
-      : event.key.toLowerCase();
+    const target = event.target as HTMLElement | null;
+    const typing = !!target && (
+      target.isContentEditable ||
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+    );
+    if (typing) return;
+
+    const key = this.getMovementKey(event);
     if (key === ' ' || event.code === 'Space') {
       event.preventDefault();
       if (!event.repeat && this.grounded) {
@@ -69,20 +84,20 @@ export class ThreeWorld {
       }
     }
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(key)) {
+      event.preventDefault();
       this.keys.add(key);
-      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
-        this.destination = null;
-      }
+      if (key !== 'shift') this.destination = null;
     }
   };
+
   private onKeyUp = (event: KeyboardEvent) => {
-    const key = event.code === 'ShiftLeft' || event.code === 'ShiftRight'
-      ? 'shift'
-      : event.key.toLowerCase();
-    this.keys.delete(key);
+    this.keys.delete(this.getMovementKey(event));
   };
   private onWindowBlur = () => this.keys.clear();
-  private onPointerDown = (event: PointerEvent) => this.handlePointer(event);
+  private onPointerDown = (event: PointerEvent) => {
+    this.container.focus({ preventScroll: true });
+    this.handlePointer(event);
+  };
   private onWheel = (event: WheelEvent) => {
     event.preventDefault();
     this.cameraZoom = THREE.MathUtils.clamp(
@@ -168,6 +183,7 @@ export class ThreeWorld {
 
   constructor(container: HTMLElement, socket: EtheriaSocket) {
     this.container = container;
+    this.container.tabIndex = 0;
     this.socket = socket;
     const state = useGameStore.getState();
     this.playerPos = {
@@ -1128,7 +1144,22 @@ export class ThreeWorld {
     monster = false
   ) {
     const model = target.getObjectByName('loaded-model') as THREE.Group | undefined;
-    if (!model) return;
+    if (!model) {
+      // Keep the temporary primitive actor visibly animated if its GLB fails
+      // to load or is unavailable.
+      const body = target.getObjectByName('fallback-actor-body') as THREE.Mesh | undefined;
+      const cloak = target.getObjectByName('fallback-actor-cloak') as THREE.Mesh | undefined;
+      const head = target.getObjectByName('fallback-actor-head') as THREE.Mesh | undefined;
+      const blend = THREE.MathUtils.clamp(speed / 2.8, 0, 1);
+      const gait = Math.sin(elapsed * 10.5 + phase);
+      if (body) {
+        body.position.y = THREE.MathUtils.damp(body.position.y, 0.72 + Math.abs(gait) * 0.045 * blend, 12, delta);
+        body.rotation.z = THREE.MathUtils.damp(body.rotation.z, gait * 0.045 * blend, 10, delta);
+      }
+      if (cloak) cloak.rotation.z = THREE.MathUtils.damp(cloak.rotation.z, -gait * 0.06 * blend, 10, delta);
+      if (head) head.position.y = THREE.MathUtils.damp(head.position.y, 1.28 + Math.abs(gait) * 0.025 * blend, 12, delta);
+      return;
+    }
 
     const mixer = model.userData.animationMixer as THREE.AnimationMixer | undefined;
     if (mixer) {
@@ -1154,7 +1185,7 @@ export class ThreeWorld {
       const next = action ?? (attacking && actions.attack
         ? actions.attack
         : locomotionAction);
-      const active = model.userData.activeAnimation as THREE.AnimationAction | null;
+      let active = model.userData.activeAnimation as THREE.AnimationAction | null;
       if (next && next !== active) {
         next.reset();
         if (action && next === action) {
@@ -1167,19 +1198,28 @@ export class ThreeWorld {
         next.fadeIn(0.18).play();
         active?.fadeOut(0.18);
         model.userData.activeAnimation = next;
+        active = next;
+      } else if (!next && active) {
+        // Stop a stale idle/walk clip when this rig has no clip for the
+        // current state, otherwise it can overwrite the procedural gait.
+        active.fadeOut(0.12);
+        model.userData.activeAnimation = null;
+        active = null;
+      }
+
+      const running = speed > 4.8;
+      if (active && !action) {
+        // If this model has no dedicated Run clip, accelerate its Walk clip
+        // so sprinting is visibly different instead of only moving faster.
+        active.timeScale = running && !actions.run ? 1.65 : 1;
       }
       mixer.update(delta);
-      // Do not leave an idle-only rig frozen while it is moving. If the GLB
-      // has no clip for the current locomotion state, let the procedural
-      // skeleton motion below animate the arms and legs instead.
-      if (!actionName && !locomotionAction) {
-        const active = model.userData.activeAnimation as THREE.AnimationAction | null;
-        active?.fadeOut(0.12);
-        model.userData.activeAnimation = null;
-      }
-      // Keep authored locomotion when available; otherwise continue into the
-      // procedural fallback. Gestures also use the fallback if no clip exists.
-      if (action || (locomotionAction && !actionName)) return;
+
+      // Authored action clips own their pose. Locomotion falls through to the
+      // procedural gait when no matching clip exists, or when sprint must
+      // visibly differ from a Walk-only rig.
+      if (action) return;
+      if (locomotionAction && !(running && !actions.run)) return;
     }
 
     const blend = THREE.MathUtils.clamp(speed / (monster ? 1.8 : 2.8), 0, 1);
@@ -1407,6 +1447,7 @@ export class ThreeWorld {
         this.socket.emit('player:move', {
           x: this.playerPos.x,
           y: this.playerPos.y,
+          animation: this.moveVelocity.length() > 4.8 ? 'run' : this.moveVelocity.length() > 0.18 ? 'walk' : 'idle',
           facing: Math.abs(this.moveVelocity.x) > Math.abs(this.moveVelocity.y) ? (this.moveVelocity.x > 0 ? 'east' : 'west') : (this.moveVelocity.y > 0 ? 'south' : 'north'),
         });
       }

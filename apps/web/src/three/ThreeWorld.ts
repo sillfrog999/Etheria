@@ -30,6 +30,7 @@ export class ThreeWorld {
   private clock = new THREE.Clock();
   private loader = new GLTFLoader();
   private soilTexture = new THREE.TextureLoader().load('/assets/textures/greenfall-soil.webp');
+  private greenfallGroundTexture: THREE.Texture | null = null;
   private natureModelCache = new Map<string, Promise<THREE.Group>>();
   private natureRoot = `${MODEL_ROOT}/imports/asset3/glTF`;
   private socket: EtheriaSocket;
@@ -463,6 +464,7 @@ export class ThreeWorld {
   }
 
   private createGreenfallGroundTexture() {
+    if (this.greenfallGroundTexture) return this.greenfallGroundTexture;
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
@@ -498,6 +500,7 @@ export class ThreeWorld {
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(1, 1);
     texture.anisotropy = 8;
+    this.greenfallGroundTexture = texture;
     return texture;
   }
 

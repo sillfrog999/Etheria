@@ -1221,7 +1221,7 @@ export class ThreeWorld {
       }
       // Keep authored locomotion when available; otherwise continue into the
       // procedural fallback. Gestures also use the fallback if no clip exists.
-      if (action || locomotionAction) return;
+      if (action || (locomotionAction && !actionName)) return;
     }
 
     const blend = THREE.MathUtils.clamp(speed / (monster ? 1.8 : 2.8), 0, 1);

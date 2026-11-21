@@ -886,7 +886,7 @@ export function CharacterSelect() {
                     letterSpacing: '1px'
                   }}
                 >
-                  Enter Greenfall
+                  Enter
                 </button>
               </div>
             </div>

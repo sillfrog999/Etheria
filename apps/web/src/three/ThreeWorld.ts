@@ -1208,17 +1208,17 @@ export class ThreeWorld {
       }
 
       const running = speed > 4.8;
-      if (active && !action) {
+      if (active && !action && !attacking && active === locomotionAction) {
         // If this model has no dedicated Run clip, accelerate its Walk clip
         // so sprinting is visibly different instead of only moving faster.
         active.timeScale = running && !actions.run ? 1.65 : 1;
       }
       mixer.update(delta);
 
-      // Authored action clips own their pose. Locomotion falls through to the
-      // procedural gait when no matching clip exists, or when sprint must
-      // visibly differ from a Walk-only rig.
-      if (action) return;
+      // Authored spell and attack actions keep their own pose. Locomotion
+      // falls through to the procedural gait when a matching clip is missing,
+      // or when sprint must differ from a Walk-only rig.
+      if (action || (attacking && actions.attack)) return;
       if (locomotionAction && !(running && !actions.run)) return;
     }
 

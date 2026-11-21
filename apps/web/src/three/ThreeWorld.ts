@@ -143,6 +143,15 @@ export class ThreeWorld {
         (typeof targetX === 'number' && typeof targetY === 'number'
           ? new THREE.Vector3(targetX, 0, targetY)
           : caster?.position);
+      if (caster) {
+        const id = String(abilityId).toLowerCase();
+        const action = id.includes('heal') ? 'heal'
+          : id.includes('shield') || id.includes('buff') ? 'buff'
+          : id.includes('blink') || id.includes('shadow_step') || id.includes('teleport') ? 'teleport'
+          : ['arcane_bolt', 'fireball', 'ice_nova', 'meteor', 'smoke_veil'].includes(id) ? 'cast'
+          : null;
+        if (action) this.playCharacterAction(caster, action);
+      }
       if (position) this.showSkillEffect(position, String(abilityId));
     },
   };
@@ -662,11 +671,19 @@ export class ThreeWorld {
         const idleClip = clips.find((clip) => /idle|stand|breath/i.test(clip.name)) ?? clips[0];
         const walkClip = clips.find((clip) => /walk|run|locomotion/i.test(clip.name));
         const attackClip = clips.find((clip) => /attack|slash|strike/i.test(clip.name));
+        const castClip = clips.find((clip) => /cast|spell|magic/i.test(clip.name));
+        const healClip = clips.find((clip) => /heal|healing|restore/i.test(clip.name));
+        const buffClip = clips.find((clip) => /buff|bless|shield|enchant/i.test(clip.name));
+        const teleportClip = clips.find((clip) => /teleport|blink|warp/i.test(clip.name));
         model.userData.animationMixer = mixer;
         model.userData.animationActions = {
           idle: idleClip ? mixer.clipAction(idleClip) : undefined,
           walk: walkClip ? mixer.clipAction(walkClip) : undefined,
-          attack: attackClip ? mixer.clipAction(attackClip) : undefined
+          attack: attackClip ? mixer.clipAction(attackClip) : undefined,
+          cast: castClip ? mixer.clipAction(castClip) : undefined,
+          heal: healClip ? mixer.clipAction(healClip) : undefined,
+          buff: buffClip ? mixer.clipAction(buffClip) : undefined,
+          teleport: teleportClip ? mixer.clipAction(teleportClip) : undefined
         };
         model.userData.activeAnimation = null;
       }
@@ -1124,6 +1141,11 @@ export class ThreeWorld {
     return true;
   }
 
+  private playCharacterAction(target: THREE.Object3D, action: 'cast' | 'heal' | 'buff' | 'teleport') {
+    target.userData.actionAnimation = action;
+    target.userData.actionAnimationUntil = performance.now() + 1100;
+  }
+
   private animateCharacter(
     target: THREE.Object3D,
     elapsed: number,
@@ -1142,15 +1164,31 @@ export class ThreeWorld {
         idle?: THREE.AnimationAction;
         walk?: THREE.AnimationAction;
         attack?: THREE.AnimationAction;
+        cast?: THREE.AnimationAction;
+        heal?: THREE.AnimationAction;
+        buff?: THREE.AnimationAction;
+        teleport?: THREE.AnimationAction;
       };
-      const next = attacking && actions.attack
+      const actionName = target.userData.actionAnimationUntil > performance.now()
+        ? target.userData.actionAnimation as 'cast' | 'heal' | 'buff' | 'teleport' | undefined
+        : undefined;
+      const action = actionName ? actions[actionName] : undefined;
+      const next = action ?? (attacking && actions.attack
         ? actions.attack
         : speed > 0.18 && actions.walk
           ? actions.walk
-          : actions.idle ?? actions.walk;
+          : actions.idle ?? actions.walk);
       const active = model.userData.activeAnimation as THREE.AnimationAction | null;
       if (next && next !== active) {
-        next.reset().fadeIn(0.18).play();
+        next.reset();
+        if (action && next === action) {
+          next.setLoop(THREE.LoopOnce, 1);
+          next.clampWhenFinished = true;
+        } else {
+          next.setLoop(THREE.LoopRepeat, Infinity);
+          next.clampWhenFinished = false;
+        }
+        next.fadeIn(0.18).play();
         active?.fadeOut(0.18);
         model.userData.activeAnimation = next;
       }

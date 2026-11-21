@@ -1,0 +1,821 @@
+[
+  {
+    "region": "aurelia",
+    "name": "blacksmith-workshop",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/blacksmith-workshop.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "castle-gatehouse",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/castle-gatehouse.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "cloth-merchant-stall",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/cloth-merchant-stall.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "farm-sacks-and-bales",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/farm-sacks-and-bales.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "fishmongers-market-stall",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/fishmongers-market-stall.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "half-timbered-tavern",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/half-timbered-tavern.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "half-timbered-townhouse",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/half-timbered-townhouse.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "knights-tent-camp",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/knights-tent-camp.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-banners-set",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-banners-set.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-bedroom-set",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-bedroom-set.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-feast-table",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-feast-table.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-hay-cart",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-hay-cart.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-horse-stable",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-horse-stable.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-produce-stall",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-produce-stall.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-stone-windmill",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-stone-windmill.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "medieval-water-sawmill",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/medieval-water-sawmill.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "merchants-covered-wagon",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/merchants-covered-wagon.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "modular-castle-wall-kit",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/modular-castle-wall-kit.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "tavern-bar-counter",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/tavern-bar-counter.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "thatched-storybook-cottage",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/thatched-storybook-cottage.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "village-chapel",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/village-chapel.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "village-signs-set",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/village-signs-set.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "aurelia",
+    "name": "village-square-fountain",
+    "category": "building",
+    "url": "/assets/3d/regions/aurelia/medieval-village/medieval-village/village-square-fountain.glb",
+    "sourcePack": "medieval-village.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "amethyst-toadstool",
+    "category": "rock",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/amethyst-toadstool.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "elder-canopy-tree",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/elder-canopy-tree.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "emerald-fern-cluster",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/emerald-fern-cluster.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "fallen-log",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/fallen-log.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "moss-crowned-boulder",
+    "category": "rock",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/moss-crowned-boulder.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "mossy-stepping-stone",
+    "category": "rock",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/mossy-stepping-stone.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "mossy-stone-cluster",
+    "category": "rock",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/mossy-stone-cluster.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "mossy-stump",
+    "category": "rock",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/mossy-stump.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "scarlet-toadstools",
+    "category": "rock",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/scarlet-toadstools.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "verdant-grass-crown",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/verdant-grass-crown.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "woodland-shrub",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/woodland-shrub.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "silverwood",
+    "name": "young-canopy-tree",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/silverwood/enchanted-wilds/enchanted-wilds-free-forest-models-v1.0.0/young-canopy-tree.glb",
+    "sourcePack": "enchanted-wilds-free-forest-models-v1.0.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "boulder",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/boulder.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "coal_pile",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/coal_pile.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "crystal_cluster",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/crystal_cluster.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "crystal_pink",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/crystal_pink.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "gem_pile",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/gem_pile.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "gold_ore",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/gold_ore.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "mine_entrance",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/mine_entrance.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "minecart",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/minecart.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "mining_helmet",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/mining_helmet.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "oil_lantern",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/oil_lantern.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "ore_bucket",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/ore_bucket.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "ore_vein_wall",
+    "category": "building",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/ore_vein_wall.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "rail_buffer",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/rail_buffer.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "rail_straight",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/rail_straight.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "rail_switch_lever",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/rail_switch_lever.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "rock_small",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/rock_small.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "stalactite",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/stalactite.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "stalagmite",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/stalagmite.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "support_beam",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/support_beam.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "support_beam_cross",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/support_beam_cross.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "wall_torch",
+    "category": "building",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/wall_torch.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "warning_sign",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/warning_sign.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "wooden_barrel",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/wooden_barrel.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "wooden_ladder",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/lowpoly-mining/LowPolyMiningPack_v1.0/GLB/wooden_ladder.glb",
+    "sourcePack": "LowPolyMiningPack_v1.0.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Coal Chunk",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Coal Chunk.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Coal Seam Rock",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Coal Seam Rock.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Copper Ore Rock",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Copper Ore Rock.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Gold Ore Rock",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Gold Ore Rock.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Hand Lantern",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Hand Lantern.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Iron Ore Chunk",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Iron Ore Chunk.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Iron Ore Rock",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Iron Ore Rock.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Large Cave Boulder",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Large Cave Boulder.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Mine Entrance Wooden Portal",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Mine Entrance Wooden Portal.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Mine Rail Curve 45 Degrees",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Mine Rail Curve 45 Degrees.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Mine Warning Sign",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Mine Warning Sign.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Minecart",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Minecart.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Mining Helmet",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Mining Helmet.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Mining Wall Lighting",
+    "category": "building",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Mining Wall Lighting.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Natural Rock Column",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Natural Rock Column.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Rockfall Debris Pile",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Rockfall Debris Pile.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Rope Coil",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Rope Coil.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Small Cave Boulder",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Small Cave Boulder.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Spider web",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Spider web.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Stalagmite Cluster",
+    "category": "rock",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Stalagmite Cluster.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Straight Mine Rail",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Straight Mine Rail.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Supply Mining Crate",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Supply Mining Crate.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Timber Plank Stack",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Timber Plank Stack.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Timber Support Frame",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Timber Support Frame.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Timber Walkway Module",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Timber Walkway Module.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Wooden Mine Ladder",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Wooden Mine Ladder.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "ashen_mountains",
+    "name": "Wooden Mining Barrel",
+    "category": "prop",
+    "url": "/assets/3d/regions/ashen_mountains/mining-free-30/FREE_VERSION_30_MODELS/GLB/Wooden Mining Barrel.glb",
+    "sourcePack": "FREE_VERSION_30_MODELS.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "arctic-fox-and-snowy-owl",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/arctic-fox-and-snowy-owl.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "frosted-shrub-set",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/frosted-shrub-set.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "frozen-cliff-waterfall",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/frozen-cliff-waterfall.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "frozen-ice-tower",
+    "category": "building",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/frozen-ice-tower.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "frozen-stone-ruins",
+    "category": "rock",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/frozen-stone-ruins.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "frozen-tree-arch",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/frozen-tree-arch.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "frozen-winter-lake",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/frozen-winter-lake.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "ice-cave-entrance",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/ice-cave-entrance.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "ice-crystal-set",
+    "category": "rock",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/ice-crystal-set.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "ice-sculpture-set",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/ice-sculpture-set.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "low-poly-ice-bridge",
+    "category": "building",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/low-poly-ice-bridge.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "low-poly-ice-throne",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/low-poly-ice-throne.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "low-poly-icicle-set",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/low-poly-icicle-set.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "low-poly-polar-bear",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/low-poly-polar-bear.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "low-poly-snow-drift-set",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/low-poly-snow-drift-set.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "low-poly-winter-moose",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/low-poly-winter-moose.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "low-poly-winter-wolf",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/low-poly-winter-wolf.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "seal-and-walrus-floes",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/seal-and-walrus-floes.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "snowy-cliff-kit",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/snowy-cliff-kit.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "snowy-mountain-peak",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/snowy-mountain-peak.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "snowy-pine-tree-set",
+    "category": "vegetation",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/snowy-pine-tree-set.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "snowy-sledding-hill",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/snowy-sledding-hill.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "winter-campsite",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/winter-campsite.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "winter-ridge-viewpoint",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/winter-ridge-viewpoint.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "frostmere",
+    "name": "winter-stream-crossing",
+    "category": "prop",
+    "url": "/assets/3d/regions/frostmere/winter-wonderland/winter-wonderland/winter-stream-crossing.glb",
+    "sourcePack": "winter-wonderland.zip"
+  },
+  {
+    "region": "the_void",
+    "name": "crystal-cave-island",
+    "category": "rock",
+    "url": "/assets/3d/regions/the_void/crystal-sky-islands/crystal-sky-islands/crystal-cave-island.glb",
+    "sourcePack": "crystal-sky-islands.zip"
+  },
+  {
+    "region": "the_void",
+    "name": "crystal-garden-island",
+    "category": "rock",
+    "url": "/assets/3d/regions/the_void/crystal-sky-islands/crystal-sky-islands/crystal-garden-island.glb",
+    "sourcePack": "crystal-sky-islands.zip"
+  },
+  {
+    "region": "the_void",
+    "name": "crystal-palace-island",
+    "category": "rock",
+    "url": "/assets/3d/regions/the_void/crystal-sky-islands/crystal-sky-islands/crystal-palace-island.glb",
+    "sourcePack": "crystal-sky-islands.zip"
+  },
+  {
+    "region": "the_void",
+    "name": "crystal-sky-islets",
+    "category": "rock",
+    "url": "/assets/3d/regions/the_void/crystal-sky-islands/crystal-sky-islands/crystal-sky-islets.glb",
+    "sourcePack": "crystal-sky-islands.zip"
+  },
+  {
+    "region": "the_void",
+    "name": "rune-circle-sky-island",
+    "category": "rock",
+    "url": "/assets/3d/regions/the_void/crystal-sky-islands/crystal-sky-islands/rune-circle-sky-island.glb",
+    "sourcePack": "crystal-sky-islands.zip"
+  },
+  {
+    "region": "emberlands",
+    "name": "Emberlands",
+    "category": "landscape",
+    "url": "/assets/3d/regions/emberlands/emberlands/Emberlands.glb",
+    "sourcePack": "Emberlands.glb"
+  }
+]

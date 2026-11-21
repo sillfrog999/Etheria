@@ -1,8 +1,9 @@
 
 import type { NetworkPlayer, Monster, InventorySlot, ItemInstance } from '@etheria/shared';
-import { MONSTER_DATABASE } from '@etheria/game-data';
+import { MONSTER_DATABASE, getMonster } from '@etheria/game-data';
 import type { Env } from '../config/env.js';
 import { getSupabaseAdmin } from '../db/supabase.js';
+import { REGIONS } from '@etheria/shared';
 
 export interface ServerPlayer extends NetworkPlayer {
   socketId: string;
@@ -26,6 +27,8 @@ export class GameStateManager {
   private activeTrades = new Map<string, unknown>();
   private persistQueue = new Set<string>();
   private env?: Env;
+  private monsterUpdateHandler?: (monster: Monster) => void;
+  private monsterAttackHandler?: (monster: Monster, player: ServerPlayer, damage: number) => void;
 
   private readonly TICK_MS = 50;
   private readonly PERSIST_INTERVAL_MS = 30000;
@@ -39,6 +42,14 @@ export class GameStateManager {
 
   setEnv(env: Env) {
     this.env = env;
+  }
+
+  setMonsterUpdateHandler(handler: (monster: Monster) => void) {
+    this.monsterUpdateHandler = handler;
+  }
+
+  setMonsterAttackHandler(handler: (monster: Monster, player: ServerPlayer, damage: number) => void) {
+    this.monsterAttackHandler = handler;
   }
 
   addPlayer(player: ServerPlayer) {
@@ -111,6 +122,17 @@ export class GameStateManager {
     return false;
   }
 
+  teleportPlayer(characterId: string, region: string, x: number, y: number) {
+    const player = this.players.get(characterId);
+    if (!player) return false;
+    player.region = region;
+    player.x = x;
+    player.y = y;
+    player.lastMovement = Date.now();
+    this.persistQueue.add(characterId);
+    return true;
+  }
+
   updatePlayerGold(characterId: string, gold: number) {
     const player = this.players.get(characterId);
 
@@ -152,6 +174,97 @@ export class GameStateManager {
     return Array.from(this.monsters.values()).filter(m => m.region === region);
   }
 
+  ensureRegionMonsters(region: string, centerX: number, centerY: number): Monster[] {
+    const existing = this.getMonstersInRegion(region);
+    if (existing.length > 0) return existing;
+
+    // Only regions with hostile encounter zones receive monsters. Aurelia is a safe city.
+    const spawnTable: Record<string, string[]> = {
+      greenfall: [
+        'forest_wolf','forest_wolf','forest_wolf','forest_wolf',
+        'giant_spider','giant_spider','giant_spider','giant_spider',
+        'skeleton_warrior','skeleton_warrior',
+        'goblin_scout','goblin_scout','goblin_scout','goblin_scout',
+        'goblin_warrior','goblin_warrior','goblin_warrior','goblin_chieftain'
+      ],
+      silverwood: [
+        'giant_spider','giant_spider','giant_spider','giant_spider','giant_spider',
+        'forest_bear','forest_bear','forest_bear','forest_bear',
+        'skeleton_warrior','skeleton_warrior','skeleton_warrior',
+        'skeletal_mage','skeletal_mage','skeletal_mage','giant_spider'
+      ],
+      ashen_mountains: [
+        'mountain_troll','mountain_troll','mountain_troll',
+        'goblin_warrior','goblin_warrior','goblin_warrior','goblin_warrior','goblin_warrior',
+        'skeletal_mage','skeletal_mage','skeletal_mage','skeletal_mage',
+        'bandit_leader','bandit_leader','bandit_leader','bandit_leader','bandit_leader','bandit_leader'
+      ],
+      frostmere: [
+        'ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf','ice_wolf',
+        'ice_elemental','ice_elemental','ice_elemental','ice_elemental','ice_elemental','ice_elemental','ice_elemental'
+      ],
+      emberlands: Array.from({ length: 14 }, () => 'fire_demon'),
+      the_void: [
+        'void_wraith','void_wraith','void_wraith','void_wraith','void_wraith','void_wraith',
+        'void_wraith','void_wraith','void_wraith','void_wraith','void_titan','void_titan'
+      ]
+    };
+
+    const definitionIds = spawnTable[region] ?? [];
+    const regionInfo = REGIONS[region];
+    if (!regionInfo || definitionIds.length === 0) return [];
+
+    const regionLabel: Record<string, string> = {
+      greenfall: 'Greenfall',
+      silverwood: 'Silverwood',
+      ashen_mountains: 'Ashen Mountain',
+      frostmere: 'Frostmere',
+      emberlands: 'Emberlands',
+      the_void: 'Void'
+    };
+    const label = regionLabel[region] ?? 'Wild';
+    const bounds = regionInfo.bounds;
+
+    definitionIds.forEach((definitionId, index) => {
+      const definition = getMonster(definitionId);
+      if (!definition || !definition.regions.includes(region)) return;
+
+      // The committed monster library currently contains Puglin and generic Creature GLBs.
+      // Keep names truthful to those models instead of calling a generic model a wolf, bear, etc.
+      const displayName = definitionId.startsWith('goblin_')
+        ? definition.name
+        : `${label} Creature`;
+
+      const angle = index * 2.399963229728653;
+      const radius = 7 + (index % 5) * 2.2;
+      const x = Math.max(bounds.minX + 3, Math.min(bounds.maxX - 3, centerX + Math.cos(angle) * radius));
+      const y = Math.max(bounds.minY + 3, Math.min(bounds.maxY - 3, centerY + Math.sin(angle) * radius));
+      const monster: Monster = {
+        id: `${region}_${definition.id}_${index}_${Math.round(x)}_${Math.round(y)}`,
+        definitionId: definition.id,
+        name: displayName,
+        level: definition.level,
+        hp: definition.maxHp,
+        maxHp: definition.maxHp,
+        attack: definition.attack,
+        defence: definition.defence,
+        x,
+        y,
+        region,
+        state: 'idle',
+        spawnX: x,
+        spawnY: y,
+      };
+      this.addMonster(monster);
+    });
+
+    return this.getMonstersInRegion(region);
+  }
+
+  ensureGreenfallMonsters(centerX: number, centerY: number): Monster[] {
+    return this.ensureRegionMonsters('greenfall', centerX, centerY);
+  }
+
   private tick() {
     for (const monster of this.monsters.values()) {
       if (monster.state === 'dead') continue;
@@ -161,7 +274,7 @@ export class GameStateManager {
       if (!definition) continue;
 
       const nearbyPlayer = Array.from(this.players.values()).find(p =>
-        p.region === monster.region &&
+        p.region === monster.region && p.hp > 0 &&
         Math.sqrt(
           Math.pow(p.x - monster.x, 2) +
           Math.pow(p.y - monster.y, 2)
@@ -176,10 +289,10 @@ export class GameStateManager {
         monster.targetPlayerId = undefined;
       }
 
-      if (monster.state === 'chase' && monster.targetPlayerId) {
+      if ((monster.state === 'chase' || monster.state === 'attack') && monster.targetPlayerId) {
         const target = this.players.get(monster.targetPlayerId);
 
-        if (target) {
+        if (target && target.hp > 0) {
           const dist = Math.sqrt(
             Math.pow(target.x - monster.x, 2) +
             Math.pow(target.y - monster.y, 2)
@@ -187,12 +300,21 @@ export class GameStateManager {
 
           if (dist <= definition.attackRange) {
             monster.state = 'attack';
+            const attackCooldown = Math.max(700, definition.attackCooldown * 1000);
+            if (Date.now() - (monster.lastAttack ?? 0) >= attackCooldown) {
+              monster.lastAttack = Date.now();
+              const damage = Math.max(1, Math.floor(monster.attack * (0.9 + Math.random() * 0.2)));
+              this.monsterAttackHandler?.(monster, target, damage);
+            }
+            this.monsterUpdateHandler?.(monster);
           } else if (dist > 0) {
+            monster.state = 'chase';
             const dx = (target.x - monster.x) / dist;
             const dy = (target.y - monster.y) / dist;
 
             monster.x += dx * definition.moveSpeed * (this.TICK_MS / 1000);
             monster.y += dy * definition.moveSpeed * (this.TICK_MS / 1000);
+            this.monsterUpdateHandler?.(monster);
           }
         } else {
           monster.state = 'idle';
@@ -212,32 +334,52 @@ export class GameStateManager {
     }
   }
 
-  async persistAll(): Promise<void> {
-    if (this.persistQueue.size === 0 || !this.env) return;
+  async persistPlayer(characterId: string): Promise<boolean> {
+    const player = this.players.get(characterId);
+    if (!player || !this.env) {
+      console.error('[GameState] Cannot persist player: player or Supabase environment is missing.');
+      return false;
+    }
 
-    const toSave = Array.from(this.persistQueue);
-    this.persistQueue.clear();
-
-    const supabase = getSupabaseAdmin(this.env);
-
-    for (const charId of toSave) {
-      const player = this.players.get(charId);
-      if (!player) continue;
-
-      try {
-        await supabase.from('characters').update({
+    try {
+      const supabase = getSupabaseAdmin(this.env);
+      const { data, error } = await supabase
+        .from('characters')
+        .update({
           pos_x: player.x,
           pos_y: player.y,
           region: player.region,
           gold: player.gold,
-        }).eq('id', charId);
-      } catch (err) {
-        console.error(`[GameState] Failed to persist player ${charId}:`, err);
-      }
-    }
+        })
+        .eq('id', characterId)
+        .select('id')
+        .maybeSingle();
 
-    if (toSave.length > 0) {
-      console.log(`[GameState] Persisted ${toSave.length} players`);
+      if (error || !data) {
+        console.error(`[GameState] Failed to persist player ${characterId}:`, error ?? 'Character row was not updated.');
+        return false;
+      }
+
+      this.persistQueue.delete(characterId);
+      console.log(`[GameState] Persisted player ${characterId} in region ${player.region}`);
+      return true;
+    } catch (err) {
+      console.error(`[GameState] Failed to persist player ${characterId}:`, err);
+      return false;
+    }
+  }
+
+  async persistAll(): Promise<void> {
+    if (this.persistQueue.size === 0 || !this.env) return;
+
+    const toSave = Array.from(this.persistQueue);
+
+    for (const charId of toSave) {
+      const saved = await this.persistPlayer(charId);
+      if (!saved) {
+        // Keep failed writes queued so the periodic persistence task can retry.
+        this.persistQueue.add(charId);
+      }
     }
   }
 

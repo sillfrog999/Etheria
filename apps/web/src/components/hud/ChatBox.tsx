@@ -23,13 +23,7 @@ export function ChatBox() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
-
-    const socket = getSocket();
-    socket.emit('chat:send', {
-      channel: activeChannel,
-      content: inputText.trim(),
-    });
-
+    getSocket().emit('chat:send', { channel: activeChannel, content: inputText.trim() });
     setInputText('');
   };
 
@@ -38,50 +32,41 @@ export function ChatBox() {
   );
 
   return (
-    <div className="fantasy-panel" style={{
+    <div className="fantasy-panel hud-chat wow-chat" style={{
       position: 'absolute',
-      bottom: '16px',
-      left: '16px',
-      width: '380px',
-      height: '220px',
+      bottom: '22px',
+      left: '18px',
+      width: 'min(370px, calc(100vw - 36px))',
+      height: '190px',
       display: 'flex',
       flexDirection: 'column',
       padding: '8px',
       pointerEvents: 'auto',
       zIndex: 10,
     }}>
-      {/* Channel Tabs */}
-      <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #2a2419', paddingBottom: '4px' }}>
+      <div className="wow-chat-tabs">
         {CHANNELS.map((ch) => (
           <button
             key={ch.id}
             onClick={() => setActiveChannel(ch.id)}
             style={{
-              background: activeChannel === ch.id ? 'rgba(212, 175, 55, 0.2)' : 'transparent',
-              border: 'none',
-              color: activeChannel === ch.id ? ch.color : '#777',
-              fontSize: '11px',
-              padding: '2px 8px',
-              borderRadius: '2px',
-              cursor: 'pointer',
-              fontWeight: activeChannel === ch.id ? 'bold' : 'normal',
+              color: activeChannel === ch.id ? ch.color : '#a99b82',
+              borderBottomColor: activeChannel === ch.id ? ch.color : 'transparent',
             }}
           >
             {ch.label}
           </button>
         ))}
       </div>
-
-      {/* Messages stream */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px' }}>
+      <div className="wow-chat-messages">
         {filtered.map((msg) => {
           const chObj = CHANNELS.find((c) => c.id === msg.channel) || CHANNELS[0];
           return (
-            <div key={msg.id} style={{ wordBreak: 'break-word', lineHeight: '1.3' }}>
-              <span style={{ color: chObj?.color, fontWeight: 'bold' }}>
-                [{chObj?.label}] {msg.senderName ? `${msg.senderName}: ` : ''}
+            <div key={msg.id} className="wow-chat-line">
+              <span style={{ color: chObj.color }}>
+                [{chObj.label}] {msg.senderName ? `${msg.senderName}: ` : ''}
               </span>
-              <span style={{ color: msg.channel === 'system' ? '#ff8888' : '#e0e0e0' }}>
+              <span style={{ color: msg.channel === 'system' ? '#f0c46d' : '#e7dfd0' }}>
                 {msg.content}
               </span>
             </div>
@@ -89,29 +74,15 @@ export function ChatBox() {
         })}
         <div ref={msgEndRef} />
       </div>
-
-      {/* Input */}
-      <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '6px', borderTop: '1px solid #2a2419', paddingTop: '6px' }}>
+      <form onSubmit={handleSendMessage} className="wow-chat-input">
         <input
           type="text"
           placeholder={`Press Enter to talk in ${activeChannel}...`}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           maxLength={200}
-          style={{
-            flex: 1,
-            background: 'rgba(0, 0, 0, 0.6)',
-            border: '1px solid var(--color-gold-dark)',
-            color: '#fff',
-            fontSize: '12px',
-            padding: '4px 8px',
-            borderRadius: '2px',
-            outline: 'none',
-          }}
         />
-        <button type="submit" className="fantasy-button" style={{ fontSize: '11px', padding: '4px 10px' }}>
-          Send
-        </button>
+        <button type="submit" className="fantasy-button">Send</button>
       </form>
     </div>
   );

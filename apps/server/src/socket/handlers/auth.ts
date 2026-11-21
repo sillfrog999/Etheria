@@ -102,6 +102,7 @@ export function handleAuth(
         accountId,
         name: char.name,
         class: char.class,
+        modelId: char.appearance?.modelId || 'elf_male',
         level: char.level,
         x: char.pos_x,
         y: char.pos_y,
@@ -128,6 +129,9 @@ export function handleAuth(
 
       gameState.addPlayer(player);
 
+      // Create server-side encounters for the player's region (Aurelia remains a safe city).
+      gameState.ensureRegionMonsters(char.region, char.pos_x, char.pos_y);
+
       // Join region room
       socket.join(`region:${char.region}`);
 
@@ -140,6 +144,11 @@ export function handleAuth(
         y: char.pos_y,
       });
 
+      // Send the current region's monsters only to this newly authenticated client.
+      for (const monster of gameState.getMonstersInRegion(char.region)) {
+        socket.emit('combat:monster_spawn', { monster });
+      }
+
       // Send current inventory
       socket.emit('player:inventory_update', { slots: inventory as never });
 
@@ -149,6 +158,7 @@ export function handleAuth(
         characterId: char.id,
         name: char.name,
         class: char.class,
+        modelId: char.appearance?.modelId || 'elf_male',
         level: char.level,
         x: char.pos_x,
         y: char.pos_y,
@@ -170,6 +180,7 @@ export function handleAuth(
             characterId: np.characterId,
             name: np.name,
             class: np.class,
+            modelId: np.modelId || 'elf_male',
             level: np.level,
             x: np.x,
             y: np.y,

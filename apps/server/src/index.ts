@@ -1,3 +1,4 @@
+
 import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
@@ -11,12 +12,35 @@ import { GameStateManager } from './game/GameStateManager.js';
 const env = validateEnv();
 
 const app = express();
-app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+
+const allowedOrigins = [
+  env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+].filter(Boolean);
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked origin: ${origin}`));
+    }
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
-  cors: { origin: env.CLIENT_URL, methods: ['GET', 'POST'], credentials: true },
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
   transports: ['websocket', 'polling'],
   pingTimeout: 60000,
   pingInterval: 25000,
@@ -38,19 +62,22 @@ app.get('/health', (_req, res) => {
 });
 
 const PORT = env.PORT;
+
 httpServer.listen(PORT, () => {
   console.log(`[Etheria Server] Running on port ${PORT} (${env.NODE_ENV})`);
-  console.log(`[Etheria Server] CORS origin: ${env.CLIENT_URL}`);
+  console.log(`[Etheria Server] Allowed CORS origins: ${allowedOrigins.join(', ')}`);
 });
 
 // Graceful shutdown
 async function shutdown() {
   console.log('[Etheria Server] Shutting down gracefully...');
   await gameState.persistAll();
+
   httpServer.close(() => {
     console.log('[Etheria Server] HTTP server closed.');
     process.exit(0);
   });
+
   setTimeout(() => process.exit(1), 10000);
 }
 

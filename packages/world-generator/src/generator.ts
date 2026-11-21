@@ -140,8 +140,15 @@ export class WorldGenerator {
             }
           }
 
-          if (rng() < 0.03 && rules.objectTypes.length > 0) {
-            const objType = rules.objectTypes[Math.floor(rng() * rules.objectTypes.length)];
+          // Decorative props use their own world-coordinate hash so their
+          // distribution stays stable when resource generation changes.
+          // A 7% density makes rocks and flowers visible around the player,
+          // instead of leaving Greenfall looking like an almost empty field.
+          const objectRoll = hash2d(worldX + 200000, worldY, this.seed + 777);
+          if (objectRoll < 0.07 && rules.objectTypes.length > 0) {
+            const typeRoll = hash2d(worldX, worldY + 300000, this.seed + 333);
+            const index = Math.floor(typeRoll * rules.objectTypes.length);
+            const objType = rules.objectTypes[index];
             if (objType) {
               objects.push({
                 id: `obj_${region}_${worldX}_${worldY}`,

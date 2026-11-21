@@ -50,48 +50,30 @@ export function TargetFrame() {
   };
 
   return (
-    <div className="fantasy-panel" style={{
+    <div className="fantasy-panel wow-unit-frame wow-target-frame" style={{
       position: 'absolute',
-      top: '16px',
-      left: '310px',
-      width: '240px',
-      padding: '10px',
+      top: '112px',
+      left: '18px',
+      width: '304px',
+      padding: '9px',
       display: 'flex',
       flexDirection: 'column',
       gap: '6px',
       pointerEvents: 'auto',
       zIndex: 10,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '13px', fontWeight: 'bold', color: isPlayer ? '#81c784' : '#ef5350' }}>
-          {targetName}
-        </span>
-        <span
-          onClick={() => setTarget(null)}
-          style={{ cursor: 'pointer', color: '#888', fontSize: '12px' }}
-        >
-          ✕
-        </span>
+      <div className="wow-unit-heading">
+        <span style={{ color: isPlayer ? '#79c8ff' : '#f08a72' }}>{targetName}</span>
+        <small>Lv. {targetLevel}</small>
+        <button className="wow-close" onClick={() => setTarget(null)} aria-label="Clear target">×</button>
       </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#aaa' }}>
-        <span>Level {targetLevel}</span>
+      <div className="wow-resource wow-target-health">
+        <div style={{ width: `${hpPercent}%` }} />
         <span>{targetHp} / {targetMaxHp} HP</span>
       </div>
-
-      <div style={{ height: '8px', background: '#200b0b', border: '1px solid #4a1515', borderRadius: '2px', overflow: 'hidden' }}>
-        <div style={{ width: `${hpPercent}%`, height: '100%', background: '#ef5350', transition: 'width 0.2s' }} />
-      </div>
-
-      <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-        <button onClick={handleAttack} className="fantasy-button" style={{ flex: 1, fontSize: '11px', padding: '4px' }}>
-          Attack
-        </button>
-        {isPlayer && (
-          <button onClick={handleTrade} className="fantasy-button" style={{ flex: 1, fontSize: '11px', padding: '4px' }}>
-            Trade
-          </button>
-        )}
+      <div className="wow-target-actions">
+        <button onClick={handleAttack} className="fantasy-button">Attack</button>
+        {isPlayer && <button onClick={handleTrade} className="fantasy-button">Trade</button>}
       </div>
     </div>
   );

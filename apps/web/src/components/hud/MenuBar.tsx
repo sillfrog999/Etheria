@@ -5,7 +5,7 @@ export function MenuBar() {
   const { toggleWindow, gold } = useGameStore();
 
   const buttons = [
-    { id: 'inventory', label: 'Inventory (I)' },
+    { id: 'inventory', label: 'Bag (I)' },
     { id: 'character', label: 'Character (C)' },
     { id: 'skills', label: 'Skills (K)' },
     { id: 'spellbook', label: 'Spells (P)' },
@@ -33,7 +33,7 @@ export function MenuBar() {
   }, [toggleWindow]);
 
   return (
-    <div className="fantasy-panel" style={{
+    <div className="fantasy-panel hud-menu-bar" style={{
       position: 'absolute',
       bottom: '16px',
       right: '16px',

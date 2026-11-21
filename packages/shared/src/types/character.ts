@@ -1,5 +1,7 @@
 export type CharacterClass = 'mage' | 'fighter' | 'assassin' | 'ranger';
 
+export type CharacterModelId = 'elf_female' | 'elf_male' | 'orc_female' | 'orc_male';
+
 export type EquipmentSlot =
   | 'head' | 'chest' | 'legs' | 'boots' | 'gloves'
   | 'mainHand' | 'offHand' | 'accessory1' | 'accessory2';
@@ -57,6 +59,7 @@ export interface SkillXP {
 }
 
 export interface CharacterAppearance {
+  modelId: CharacterModelId;
   bodyType: number;
   hairStyle: number;
   hairColor: string;

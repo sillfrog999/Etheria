@@ -1,10 +1,8 @@
 
 import React, { useEffect, useRef } from 'react';
-import Phaser from 'phaser';
 import { useGameStore } from '../../store/gameStore';
 import { getSocket } from '../../lib/socket';
-import { PreloadScene } from '../../phaser/scenes/PreloadScene';
-import { GameScene } from '../../phaser/scenes/GameScene';
+import { ThreeWorld } from '../../three/ThreeWorld';
 
 import { PlayerFrame } from '../hud/PlayerFrame';
 import { Minimap } from '../hud/Minimap';
@@ -24,8 +22,9 @@ import { SpellbookWindow } from '../windows/SpellbookWindow';
 import { WorldMapWindow } from '../windows/WorldMapWindow';
 
 export function GamePage() {
-  const gameRef = useRef<Phaser.Game | null>(null);
-  const { token, character, gatheringState, setGatheringState } = useGameStore();
+  const gameRef = useRef<ThreeWorld | null>(null);
+  const worldContainerRef = useRef<HTMLDivElement | null>(null);
+  const { token, character } = useGameStore();
 
   useEffect(() => {
     const socket = getSocket();
@@ -60,27 +59,45 @@ export function GamePage() {
     };
 
     const onGatherStart = ({ nodeId, duration }: any) => {
-      setGatheringState({ nodeId, duration, startTime: Date.now() });
+      const resourceId = String(nodeId ?? '').split('_').slice(3).join('_');
+      const resourceNames: Record<string, string> = {
+        wood: 'Wood', ancient_wood: 'Ancient Wood', copper_ore: 'Copper Ore',
+        tin_ore: 'Tin Ore', iron_ore: 'Iron Ore', coal: 'Coal',
+        silver_ore: 'Silver Ore', gold_ore: 'Gold Ore', mithril_ore: 'Mithril',
+        crystal_shards: 'Crystal Shards', herbs: 'Herbs', rare_herbs: 'Rare Herbs',
+        fiber: 'Fiber', fish: 'Fish', hide: 'Hide',
+      };
+      const resource = resourceNames[resourceId] ?? (resourceId.replace(/_/g, ' ') || 'resource');
+      useGameStore.getState().addChatMessage({
+        id: `gather-start-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        senderId: 'system',
+        senderName: 'System',
+        channel: 'system',
+        content: `Gathering started: ${resource} · ${Math.ceil((duration || 0) / 1000)} sec`,
+        timestamp: Date.now(),
+      } as any);
     };
 
     const onGatherComplete = ({ item, xp, skill }: any) => {
-      setGatheringState(null);
       useGameStore.getState().addChatMessage({
         id: Math.random().toString(),
+        senderId: 'system',
+        senderName: 'Hệ thống',
         channel: 'system',
-        content: `Gathered ${item.quantity}x ${item.name} (+${xp} ${skill} XP)`,
+        content: `Collected ${item?.quantity ?? 1}x ${item?.name ?? 'resource'} (+${xp ?? 0} ${skill ?? ''} XP)`,
         timestamp: Date.now()
-      });
+      } as any);
     };
 
     const onGatherFail = ({ reason }: any) => {
-      setGatheringState(null);
       useGameStore.getState().addChatMessage({
         id: Math.random().toString(),
+        senderId: 'system',
+        senderName: 'Hệ thống',
         channel: 'system',
-        content: `Gathering failed: ${reason}`,
+        content: `Gathering failed: ${reason ?? 'Unable to gather this resource.'}`,
         timestamp: Date.now()
-      });
+      } as any);
     };
 
     const onStatsUpdate = (stats: any) => {
@@ -116,34 +133,24 @@ export function GamePage() {
     socket.on('player:equipment_update', onEquipmentUpdate);
     socket.on('chat:message', onChatMessage);
 
-    // Initialize Phaser before connecting/authenticating the socket.
-    // GameScene registers its world listeners before it starts authentication.
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      parent: 'phaser-container',
-      width: window.innerWidth,
-      height: window.innerHeight,
-      pixelArt: true,
-      roundPixels: true,
-      backgroundColor: '#0a0d14',
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-      },
-      scene: [PreloadScene, GameScene],
-    };
+    // Initialize the Three.js world and register its world listeners before auth.
+    const container = worldContainerRef.current;
+    if (!container) return;
 
-    gameRef.current = new Phaser.Game(config);
+    const world = new ThreeWorld(container, socket);
+    gameRef.current = world;
 
-    const handleResize = () => {
-      gameRef.current?.scale.resize(window.innerWidth, window.innerHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
+    // Authenticate only after the renderer has subscribed to connect:ack/world events.
+    if (token) {
+      if (socket.connected) {
+        socket.emit('auth', { token });
+      } else {
+        socket.once('connect', () => socket.emit('auth', { token }));
+        socket.connect();
+      }
+    }
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-
       socket.off('trade:request', onTradeRequest);
       socket.off('trade:update', onTradeUpdate);
       socket.off('trade:complete', onTradeComplete);
@@ -157,12 +164,12 @@ export function GamePage() {
       socket.off('player:equipment_update', onEquipmentUpdate);
       socket.off('chat:message', onChatMessage);
 
-      gameRef.current?.destroy(true);
+      gameRef.current?.dispose();
       gameRef.current = null;
 
       socket.disconnect();
     };
-  }, [token, character, setGatheringState]);
+  }, [token, character]);
 
   return (
     <div style={{
@@ -172,54 +179,10 @@ export function GamePage() {
       overflow: 'hidden'
     }}>
       <div
-        id="phaser-container"
+        ref={worldContainerRef}
+        id="three-world-container"
         style={{ width: '100%', height: '100%' }}
       />
-
-      {gatheringState && (
-        <div style={{
-          position: 'absolute',
-          top: '42%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '200px',
-          padding: '8px',
-          background: 'rgba(0, 0, 0, 0.85)',
-          border: '1px solid var(--color-gold)',
-          borderRadius: '4px',
-          textAlign: 'center',
-          zIndex: 30,
-        }}>
-          <span style={{
-            fontSize: '11px',
-            color: 'var(--color-gold)',
-            fontWeight: 'bold'
-          }}>
-            Gathering resource...
-          </span>
-
-          <div style={{
-            height: '6px',
-            background: '#222',
-            borderRadius: '3px',
-            marginTop: '6px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              height: '100%',
-              background: '#4caf50',
-              animation: `progress ${gatheringState.duration}ms linear forwards`,
-            }} />
-          </div>
-
-          <style>{`
-            @keyframes progress {
-              from { width: 0%; }
-              to { width: 100%; }
-            }
-          `}</style>
-        </div>
-      )}
 
       <PlayerFrame />
       <Minimap />

@@ -30,7 +30,6 @@ export class ThreeWorld {
   private clock = new THREE.Clock();
   private loader = new GLTFLoader();
   private soilTexture = new THREE.TextureLoader().load('/assets/textures/greenfall-soil.webp');
-  private greenfallGroundTexture: THREE.Texture | null = null;
   private natureModelCache = new Map<string, Promise<THREE.Group>>();
   private natureRoot = `${MODEL_ROOT}/imports/asset3/glTF`;
   private socket: EtheriaSocket;
@@ -484,47 +483,6 @@ export class ThreeWorld {
     this.scene.add(fill);
   }
 
-  private createGreenfallGroundTexture() {
-    if (this.greenfallGroundTexture) return this.greenfallGroundTexture;
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return this.soilTexture;
-
-    ctx.fillStyle = '#766044';
-    ctx.fillRect(0, 0, 512, 512);
-
-    let seed = 739391;
-    const random = () => {
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      return seed / 4294967296;
-    };
-
-    // Irregular, subtle grass growth mixed into the brown soil, not a solid green tile.
-    for (let i = 0; i < 1900; i++) {
-      const x = random() * 512;
-      const y = random() * 512;
-      const radius = 1.5 + random() * 8;
-      const green = random() > 0.48;
-      ctx.fillStyle = green
-        ? `rgba(${48 + Math.floor(random() * 35)}, ${78 + Math.floor(random() * 45)}, ${37 + Math.floor(random() * 24)}, ${0.12 + random() * 0.2})`
-        : `rgba(48, 34, 22, ${0.05 + random() * 0.1})`;
-      ctx.beginPath();
-      ctx.ellipse(x, y, radius * (0.7 + random()), radius * (0.35 + random() * 0.5), random() * Math.PI, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 1);
-    texture.anisotropy = 8;
-    this.greenfallGroundTexture = texture;
-    return texture;
-  }
-
   private addGroundBase() {
     const baseTexture = this.soilTexture.clone();
     baseTexture.needsUpdate = true;
@@ -830,7 +788,7 @@ export class ThreeWorld {
     geometry.computeVertexNormals();
     const terrain = new THREE.Mesh(
       geometry,
-      new THREE.MeshStandardMaterial({ map: (chunk.coord.region === 'greenfall' ? this.createGreenfallGroundTexture() : this.soilTexture), vertexColors: true, roughness: 1 })
+      new THREE.MeshStandardMaterial({ map: this.soilTexture, vertexColors: true, roughness: 1 })
     );
     terrain.receiveShadow = true;
     this.scene.add(terrain);

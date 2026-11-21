@@ -36,6 +36,11 @@ export class ThreeWorld {
   private player = new THREE.Group();
   private playerPos: Point;
   private moveVelocity = new THREE.Vector2();
+  private verticalVelocity = 0;
+  private grounded = true;
+  private groundHeights = new Map<string, number>();
+  private blockedTiles = new Set<string>();
+  private colliders: Array<{ x: number; z: number; radius: number }> = [];
   private attackAnimUntil = 0;
   private destination: Point | null = null;
   private keys = new Set<string>();
@@ -53,6 +58,10 @@ export class ThreeWorld {
   private teleportPending = false;
   private onKeyDown = (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
+    if (key === ' ' && !event.repeat && this.grounded) {
+      this.verticalVelocity = 6.2;
+      this.grounded = false;
+    }
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
       this.keys.add(key);
     }
@@ -217,6 +226,7 @@ export class ThreeWorld {
       house.add(base, roof, door);
       house.position.set(x, 0, z);
       house.scale.setScalar(scale);
+      this.colliders.push({ x, z, radius: 2.35 * scale });
       this.scene.add(house);
     };
     makeHouse(8, 8, 1.05);
@@ -231,6 +241,7 @@ export class ThreeWorld {
       npc.add(modelRoot);
       this.createActor(modelRoot, coat, 0x3d342d);
       npc.position.set(x, 0, z);
+      this.colliders.push({ x, z, radius: 0.62 });
       npc.userData.idlePhase = Math.random() * Math.PI * 2;
       npc.userData.clickable = { kind: 'npc', id } satisfies Clickable;
       const canvas = document.createElement('canvas');
@@ -367,6 +378,10 @@ export class ThreeWorld {
           }
 
           group.position.set(x, 0, z);
+          if (asset.category === 'building') this.colliders.push({ x, z, radius: 2.2 });
+          else if (asset.category === 'rock') this.colliders.push({ x, z, radius: 0.75 });
+          else if (asset.category === 'vegetation') this.colliders.push({ x, z, radius: 0.48 });
+          else if (asset.category === 'landscape') this.colliders.push({ x, z, radius: 3.5 });
           group.rotation.y = (hash % 360) * Math.PI / 180;
           group.name = `region-asset-${asset.name}`;
           this.scene.add(group);
@@ -588,6 +603,20 @@ export class ThreeWorld {
 
       model.name = 'loaded-model';
       model.userData.baseY = model.position.y;
+      if (Array.isArray(gltf.animations) && gltf.animations.length > 0) {
+        const mixer = new THREE.AnimationMixer(model);
+        const clips = gltf.animations as THREE.AnimationClip[];
+        const idleClip = clips.find((clip) => /idle|stand|breath/i.test(clip.name)) ?? clips[0];
+        const walkClip = clips.find((clip) => /walk|run|locomotion/i.test(clip.name));
+        const attackClip = clips.find((clip) => /attack|slash|strike/i.test(clip.name));
+        model.userData.animationMixer = mixer;
+        model.userData.animationActions = {
+          idle: idleClip ? mixer.clipAction(idleClip) : undefined,
+          walk: walkClip ? mixer.clipAction(walkClip) : undefined,
+          attack: attackClip ? mixer.clipAction(attackClip) : undefined
+        };
+        model.userData.activeAnimation = null;
+      }
       target.clear();
       target.add(model);
     }, undefined, (error: unknown) => {
@@ -686,6 +715,8 @@ export class ThreeWorld {
         const wx = chunkX * CHUNK_SIZE + x;
         const wz = chunkY * CHUNK_SIZE + z;
         const y = (tile.elevation || 0) * 0.12;
+        this.groundHeights.set(`${wx},${wz}`, y);
+        if (!tile.walkable) this.blockedTiles.add(`${wx},${wz}`);
         const color = new THREE.Color(this.tileColor(String(tile.type)));
         positions.push(
           wx, y, wz,
@@ -714,6 +745,11 @@ export class ThreeWorld {
     for (const object of chunk.objects ?? []) {
       const prop = this.createProp(String(object.type), object.id);
       prop.position.set(object.x, (object.z || 0) * 0.12, object.y);
+      if (!object.walkable) {
+        const type = String(object.type).toLowerCase();
+        const radius = type.includes('tree') ? 0.9 : type.includes('building') ? 2 : 0.65;
+        this.colliders.push({ x: object.x, z: object.y, radius });
+      }
       this.scene.add(prop);
     }
 
@@ -721,6 +757,7 @@ export class ThreeWorld {
       if (node.depleted) continue;
       const prop = this.createResource(String(node.resourceId));
       prop.position.set(node.x, 0, node.y);
+      this.colliders.push({ x: node.x, z: node.y, radius: 0.58 });
       prop.userData.clickable = { kind: 'resource', id: node.id } satisfies Clickable;
       this.resourceObjects.set(node.id, prop);
       this.scene.add(prop);
@@ -1003,6 +1040,28 @@ export class ThreeWorld {
     this.renderer.setSize(width, height);
   }
 
+  private getGroundHeight(x: number, z: number) {
+    return this.groundHeights.get(`${Math.floor(x)},${Math.floor(z)}`) ?? 0;
+  }
+
+  private canOccupy(x: number, z: number) {
+    if (this.blockedTiles.has(`${Math.floor(x)},${Math.floor(z)}`)) return false;
+    const playerRadius = 0.34;
+    for (const collider of this.colliders) {
+      if (Math.hypot(x - collider.x, z - collider.z) < playerRadius + collider.radius) return false;
+    }
+    for (const npc of this.npcs.values()) {
+      if (Math.hypot(x - npc.position.x, z - npc.position.z) < 0.78) return false;
+    }
+    for (const monster of this.monsters.values()) {
+      if (Math.hypot(x - monster.position.x, z - monster.position.z) < 0.82) return false;
+    }
+    for (const remote of this.remotePlayers.values()) {
+      if (Math.hypot(x - remote.position.x, z - remote.position.z) < 0.72) return false;
+    }
+    return true;
+  }
+
   private animateCharacter(
     target: THREE.Object3D,
     elapsed: number,
@@ -1014,6 +1073,28 @@ export class ThreeWorld {
   ) {
     const model = target.getObjectByName('loaded-model') as THREE.Group | undefined;
     if (!model) return;
+
+    const mixer = model.userData.animationMixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      const actions = model.userData.animationActions as {
+        idle?: THREE.AnimationAction;
+        walk?: THREE.AnimationAction;
+        attack?: THREE.AnimationAction;
+      };
+      const next = attacking && actions.attack
+        ? actions.attack
+        : speed > 0.18 && actions.walk
+          ? actions.walk
+          : actions.idle ?? actions.walk;
+      const active = model.userData.activeAnimation as THREE.AnimationAction | null;
+      if (next && next !== active) {
+        next.reset().fadeIn(0.18).play();
+        active?.fadeOut(0.18);
+        model.userData.activeAnimation = next;
+      }
+      mixer.update(delta);
+      return;
+    }
 
     const blend = THREE.MathUtils.clamp(speed / (monster ? 1.8 : 2.8), 0, 1);
     const stride = elapsed * (monster ? 8 : 10.5) + phase;
@@ -1133,11 +1214,27 @@ export class ThreeWorld {
 
     this.moveVelocity.x = THREE.MathUtils.damp(this.moveVelocity.x, targetVX, 14, delta);
     this.moveVelocity.y = THREE.MathUtils.damp(this.moveVelocity.y, targetVY, 14, delta);
-    this.playerPos.x += this.moveVelocity.x * delta;
-    this.playerPos.y += this.moveVelocity.y * delta;
+    const nextX = this.playerPos.x + this.moveVelocity.x * delta;
+    const nextZ = this.playerPos.y + this.moveVelocity.y * delta;
+    if (this.canOccupy(nextX, this.playerPos.y)) this.playerPos.x = nextX;
+    else this.moveVelocity.x = 0;
+    if (this.canOccupy(this.playerPos.x, nextZ)) this.playerPos.y = nextZ;
+    else this.moveVelocity.y = 0;
+
+    this.verticalVelocity -= 18 * delta;
+    let playerHeight = this.player.position.y + this.verticalVelocity * delta;
+    const groundHeight = this.getGroundHeight(this.playerPos.x, this.playerPos.y);
+    if (playerHeight <= groundHeight) {
+      playerHeight = groundHeight;
+      this.verticalVelocity = 0;
+      this.grounded = true;
+    } else {
+      this.grounded = false;
+    }
+
     const isMoving = this.moveVelocity.lengthSq() > 0.015;
     const elapsed = performance.now() * 0.001;
-    this.player.position.set(this.playerPos.x, 0, this.playerPos.y);
+    this.player.position.set(this.playerPos.x, playerHeight, this.playerPos.y);
     this.animateCharacter(
       this.player,
       elapsed,
